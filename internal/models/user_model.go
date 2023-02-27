@@ -30,7 +30,6 @@ type UserOnline struct {
 
 // 用户登录
 func UserLogin(accIP, accPort string, appID uint32, userID string, addr string, loginTime uint64) (userOnline *UserOnline) {
-
 	userOnline = &UserOnline{
 		AccIP:         accIP,
 		AccPort:       accPort,
@@ -41,13 +40,11 @@ func UserLogin(accIP, accPort string, appID uint32, userID string, addr string, 
 		HeartbeatTime: loginTime,
 		IsLogoff:      false,
 	}
-
 	return
 }
 
 // 用户心跳
 func (u *UserOnline) Heartbeat(currentTime uint64) {
-
 	u.HeartbeatTime = currentTime
 	u.IsLogoff = false
 
@@ -56,7 +53,6 @@ func (u *UserOnline) Heartbeat(currentTime uint64) {
 
 // 用户退出登录
 func (u *UserOnline) LogOut() {
-
 	currentTime := uint64(time.Now().Unix())
 	u.LogOutTime = currentTime
 	u.IsLogoff = true
@@ -92,12 +88,10 @@ func (u *UserOnline) IsOnline() (online bool) {
 
 // 用户是否在本台机器上
 func (u *UserOnline) UserIsLocal(localIP, localPort string) (result bool) {
-
 	if u.AccIP == localIP && u.AccPort == localPort {
 		result = true
 
 		return
 	}
-
 	return
 }

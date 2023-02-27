@@ -70,7 +70,7 @@ func StartWebSocket() {
 
 	// 添加处理程序
 	go clientManager.start()
-	logrus.Info("WebSocket 启动程序成功", serverIP, serverPort)
+	logrus.Infof("WebSocket 启动程序成功:%s:%s", serverIP, serverPort)
 
 	http.ListenAndServe(":"+webSocketPort, nil)
 }

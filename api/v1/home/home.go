@@ -11,7 +11,6 @@ import (
 
 // 聊天页面
 func Index(c *gin.Context) {
-
 	appIDStr := c.Query("appID")
 	appIDUint64, _ := strconv.ParseInt(appIDStr, 10, 32)
 	appID := uint32(appIDUint64)
@@ -23,7 +22,7 @@ func Index(c *gin.Context) {
 
 	data := gin.H{
 		"title":        "聊天首页",
-		"appId":        appID,
+		"appID":        appID,
 		"httpUrl":      viper.GetString("app.httpUrl"),
 		"webSocketUrl": viper.GetString("app.webSocketUrl"),
 	}

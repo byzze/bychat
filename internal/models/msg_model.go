@@ -3,10 +3,12 @@ package models
 import "bychat/internal/common"
 
 const (
-	MessageTypeText = "text"
-	MessageCmdMsg   = "msg"
-	MessageCmdEnter = "enter"
-	MessageCmdExit  = "exit"
+	MessageTypeText     = "text"
+	MessageCmdMsg       = "msg"
+	MessageCmdEnter     = "enter"
+	MessageCmdExit      = "exit"
+	MessageCmdLogin     = "login"
+	MessageCmdHeartbeat = "heartbeat"
 )
 
 // Message 消息的定义
@@ -19,7 +21,6 @@ type Message struct {
 
 // NewTestMsg
 func NewTestMsg(from string, Msg string) (message *Message) {
-
 	message = &Message{
 		Type: MessageTypeText,
 		From: from,
@@ -39,24 +40,20 @@ func getTextMsgData(cmd, uuid, msgID, message string) string {
 
 // 文本消息
 func GetMsgData(uuid, msgID, cmd, message string) string {
-
 	return getTextMsgData(cmd, uuid, msgID, message)
 }
 
 // 文本消息
 func GetTextMsgData(uuid, msgID, message string) string {
-
 	return getTextMsgData("msg", uuid, msgID, message)
 }
 
 // 用户进入消息
 func GetTextMsgDataEnter(uuid, msgID, message string) string {
-
 	return getTextMsgData("enter", uuid, msgID, message)
 }
 
 // 用户退出消息
 func GetTextMsgDataExit(uuid, msgID, message string) string {
-
 	return getTextMsgData("exit", uuid, msgID, message)
 }

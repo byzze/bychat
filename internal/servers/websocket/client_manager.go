@@ -1,6 +1,8 @@
 package websocket
 
 import (
+	"bychat/internal/helper"
+	"bychat/internal/models"
 	"fmt"
 	"sync"
 	"time"
@@ -36,7 +38,6 @@ func NewClientManager() (clientManager *ClientManager) {
 // 获取用户key
 func GetUserKey(appId uint32, userId string) (key string) {
 	key = fmt.Sprintf("%d_%s", appId, userId)
-
 	return
 }
 
@@ -222,7 +223,6 @@ func (manager *ClientManager) EventRegister(client *Client) {
 
 // 用户登录
 func (manager *ClientManager) EventLogin(login *login) {
-
 	client := login.Client
 	// 连接存在，在添加
 	if manager.InClient(client) {
@@ -232,8 +232,18 @@ func (manager *ClientManager) EventLogin(login *login) {
 
 	logrus.Info("EventLogin 用户登录", client.Addr, login.AppID, login.UserID)
 
-	// orderId := helper.GetOrderIdTime()
-	// SendUserMessageAll(login.AppID, login.UserId, orderId, models.MessageCmdEnter, "哈喽~")
+	orderID := helper.GetOrderIdTime()
+	SendUserMessageAll(login.AppID, login.UserID, orderID, models.MessageCmdEnter, "哈喽~")
+}
+
+func SendUserMessageAll(appID uint32, userID, orderID, cmd, msg string) {
+	logrus.Infof("SendUserMessageAll:appID:%d,userID:%s", appID, userID)
+	// todo 单发
+	seq := fmt.Sprintf("%d", time.Now().UnixNano())
+	h := models.GetTextMsgDataEnter(userID, seq, msg)
+	for c := range clientManager.Clients {
+		c.Send <- []byte(h)
+	}
 }
 
 // 用户断开连接
@@ -258,11 +268,11 @@ func (manager *ClientManager) EventLogin(login *login) {
 // 	// 关闭 chan
 // 	// close(client.Send)
 
-// 	logrus.Info("EventUnregister 用户断开连接", client.Addr, client.AppID, client.UserId)
+// 	logrus.Info("EventUnregister 用户断开连接", client.Addr, client.AppID, client.UserID)
 
-// 	if client.UserId != "" {
-// 		orderId := helper.GetOrderIdTime()
-// 		SendUserMessageAll(client.AppID, client.UserId, orderId, models.MessageCmdExit, "用户已经离开~")
+// 	if client.UserID != "" {
+// 		orderID := helper.GetOrderIdTime()
+// 		SendUserMessageAll(client.AppID, client.UserID, orderID, models.MessageCmdExit, "用户已经离开~")
 // 	}
 // }
 

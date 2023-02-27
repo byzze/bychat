@@ -14,9 +14,9 @@ const (
 
 // 用户登录
 type login struct {
-	AppID  uint32
-	UserID string
-	Client *Client
+	AppID  uint32  `json:"appID,omitempty"`
+	UserID string  `json:"userID,omitempty"`
+	Client *Client `json:"client,omitempty"`
 }
 
 // GetKey 获取 key
@@ -74,13 +74,12 @@ func (c *Client) read() {
 		_, message, err := c.Socket.ReadMessage()
 		if err != nil {
 			logrus.Info("读取客户端数据 错误", c.Addr, err)
-
 			return
 		}
 
 		// 处理程序
 		logrus.Info("读取客户端数据 处理:", string(message))
-		// ProcessData(c, message)
+		ProcessData(c, message)
 	}
 }
 

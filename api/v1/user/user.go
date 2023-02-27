@@ -3,6 +3,7 @@ package user
 import (
 	"bychat/api/v1/base"
 	"bychat/internal/common"
+	"bychat/internal/servers/websocket"
 	"fmt"
 	"strconv"
 
@@ -11,8 +12,7 @@ import (
 
 // List 查看全部在线用户
 func List(c *gin.Context) {
-
-	appIDStr := c.Query("appId")
+	appIDStr := c.Query("appID")
 	appIDUint64, _ := strconv.ParseInt(appIDStr, 10, 32)
 	appID := uint32(appIDUint64)
 
@@ -20,9 +20,9 @@ func List(c *gin.Context) {
 
 	data := make(map[string]interface{})
 
-	// userList := websocket.UserList(appID)
-	// data["userList"] = userList
-	// data["userCount"] = len(userList)
+	userList := websocket.UserList(appID)
+	data["userList"] = userList
+	data["userCount"] = len(userList)
 
 	base.Response(c, common.OK, "", data)
 }
