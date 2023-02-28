@@ -5,6 +5,7 @@ import "bychat/internal/common"
 // 消息类型
 const (
 	MessageTypeText = "text"
+	MessageTypeImg  = "img"
 
 	MessageCmdMsg       = "msg"
 	MessageCmdEnter     = "enter"
@@ -15,10 +16,10 @@ const (
 
 // Message 消息的定义
 type Message struct {
-	Target string `json:"target"` // 目标
-	Type   string `json:"type"`   // 消息类型 text/img/
-	Msg    string `json:"msg"`    // 消息内容
-	From   string `json:"from"`   // 发送者
+	To   string `json:"to"`   // 目标
+	Type string `json:"type"` // 消息类型 text/img/
+	Msg  string `json:"msg"`  // 消息内容
+	From string `json:"from"` // 发送者
 }
 
 // NewTextMsg 文本消息构造

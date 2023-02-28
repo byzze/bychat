@@ -49,3 +49,18 @@ func ZGetMessageAll(appID uint32) (res []string, err error) {
 	}
 	return
 }
+
+// ZGetMessageAll 获取数据
+func ZGetMessageByOffset(appID uint32, start, limit int64) (res []string, err error) {
+	key := getmessageZSortKey(appID)
+	redisClient := redislib.GetClient()
+
+	res, err = redisClient.ZRange(key, start, limit).Result()
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"key": key,
+			"err": err,
+		}).Error("ZGetMessageAll")
+	}
+	return
+}

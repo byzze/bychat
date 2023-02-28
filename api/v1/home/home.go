@@ -15,8 +15,8 @@ func Index(c *gin.Context) {
 	appIDStr := c.Query("appID")
 	appIDUint64, _ := strconv.ParseInt(appIDStr, 10, 32)
 	appID := uint32(appIDUint64)
-	if !websocket.InAppIds(appID) {
-		appID = websocket.GetDefaultAppID()
+	if !websocket.InRoomIDs(appID) {
+		appID = websocket.GetDefaultRoomID()
 	}
 
 	fmt.Println("http_request 聊天首页", appID)

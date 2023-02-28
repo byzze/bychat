@@ -12,20 +12,30 @@ import (
 )
 
 const (
-	defaultAppID = 101 // 默认平台ID
+	defaultAppID = 1 // 默认平台ID web
+)
+const (
+	defaultRoomID = 101 // 默认房间ID
 )
 
 var (
-	clientManager = NewClientManager()                    // 管理者
-	appIds        = []uint32{defaultAppID, 102, 103, 104} // 全部的平台
+	clientManager = NewClientManager()                     // 管理者
+	roomIDs       = []uint32{defaultRoomID, 102, 103, 104} // 全部的平台
+
+	appIDs = []uint32{defaultRoomID, 2, 3, 4} // 全部的平台
 
 	serverIP   string
 	serverPort string
 )
 
+// GetRoomIDs 获取id
+func GetRoomIDs() []uint32 {
+	return roomIDs
+}
+
 // GetAppIds 获取id
 func GetAppIds() []uint32 {
-	return appIds
+	return appIDs
 }
 
 // GetServerNode 获取id
@@ -42,19 +52,19 @@ func IsLocal(server *models.ServerNode) (isLocal bool) {
 	return
 }
 
-func InAppIds(appID uint32) (inAppID bool) {
-	for _, value := range appIds {
-		if value == appID {
-			inAppID = true
+func InRoomIDs(roomID uint32) (inRoomID bool) {
+	for _, value := range roomIDs {
+		if value == roomID {
+			inRoomID = true
 			return
 		}
 	}
 	return
 }
 
-// GetDefaultAppID 获取df id
-func GetDefaultAppID() (appID uint32) {
-	appID = defaultAppID
+// GetDefaultRoomID 获取df id
+func GetDefaultRoomID() (roomID uint32) {
+	roomID = defaultRoomID
 	return
 }
 

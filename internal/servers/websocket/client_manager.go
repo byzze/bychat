@@ -38,8 +38,8 @@ func NewClientManager() (clientManager *ClientManager) {
 }
 
 // GetUserKey 获取用户key
-func GetUserKey(appID uint32, userID string) (key string) {
-	key = fmt.Sprintf("%d_%s", appID, userID)
+func GetUserKey(appID, roomID uint32, userID string) (key string) {
+	key = fmt.Sprintf("%d_%d_%s", appID, roomID, userID)
 	return
 }
 
@@ -107,11 +107,11 @@ func (manager *ClientManager) DelClients(client *Client) {
 }
 
 // GetUserClient 获取用户的连接
-func (manager *ClientManager) GetUserClient(appID uint32, userID string) (client *Client) {
+func (manager *ClientManager) GetUserClient(appID, roomID uint32, userID string) (client *Client) {
 	manager.UserLock.RLock()
 	defer manager.UserLock.RUnlock()
 
-	userKey := GetUserKey(appID, userID)
+	userKey := GetUserKey(appID, roomID, userID)
 	if value, ok := manager.Users[userKey]; ok {
 		client = value
 	}
@@ -137,7 +137,7 @@ func (manager *ClientManager) DelUsers(client *Client) (result bool) {
 	manager.UserLock.Lock()
 	defer manager.UserLock.Unlock()
 
-	key := GetUserKey(client.AppID, client.UserID)
+	key := GetUserKey(client.AppID, client.RoomID, client.UserID)
 	if value, ok := manager.Users[key]; ok {
 		// 判断是否为相同的用户
 		if value.Addr != client.Addr {

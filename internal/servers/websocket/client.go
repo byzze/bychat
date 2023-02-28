@@ -15,13 +15,14 @@ const (
 // 用户登录
 type login struct {
 	AppID  uint32  `json:"appID,omitempty"`
+	RoomID uint32  `json:"roomID,omitempty"`
 	UserID string  `json:"userID,omitempty"`
 	Client *Client `json:"client,omitempty"`
 }
 
 // GetKey 获取 key
 func (l *login) GetKey() (key string) {
-	key = GetUserKey(l.AppID, l.UserID)
+	key = GetUserKey(l.AppID, l.RoomID, l.UserID)
 	return
 }
 
@@ -30,8 +31,9 @@ type Client struct {
 	Addr          string          // 客户端地址
 	Socket        *websocket.Conn // 用户连接
 	Send          chan []byte     // 待发送的数据
-	AppID         uint32          // 登录的平台Id app/web/ios
-	UserID        string          // 用户Id，用户登录以后才有
+	AppID         uint32          // 登录的平台ID app/web/ios
+	RoomID        uint32          // 房间ID
+	UserID        string          // 用户ID，用户登录以后才有
 	FirstTime     uint64          // 首次连接事件
 	HeartbeatTime uint64          // 用户上次心跳时间
 	LoginTime     uint64          // 登录时间 登录以后才有
@@ -52,7 +54,7 @@ func NewClient(addr string, socket *websocket.Conn, firstTime uint64) (client *C
 
 // GetKey 获取 key
 func (c *Client) GetKey() (key string) {
-	key = GetUserKey(c.AppID, c.UserID)
+	key = GetUserKey(c.AppID, c.RoomID, c.UserID)
 	return
 }
 
