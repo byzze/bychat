@@ -14,15 +14,15 @@ import (
 
 // List 查看全部在线用户
 func List(ctx *gin.Context) {
-	appIDStr := ctx.Query("appID")
-	appIDUint64, _ := strconv.ParseInt(appIDStr, 10, 32)
-	appID := uint32(appIDUint64)
+	roomIDStr := ctx.Query("roomID")
+	roomIDUint64, _ := strconv.ParseInt(roomIDStr, 10, 32)
+	roomID := uint32(roomIDUint64)
 
-	logrus.Info("http_request 查看全部在线用户 appID:", appID)
+	logrus.Info("http_request 查看全部在线用户 roomID:", roomID)
 
 	data := make(map[string]interface{})
 
-	userList := websocket.GetUserList(appID)
+	userList := websocket.GetUserList(roomID)
 	data["userList"] = userList
 	data["userCount"] = len(userList)
 
@@ -37,10 +37,13 @@ func SendMessageAll(ctx *gin.Context) {
 	message := ctx.PostForm("message")
 
 	appIDUint64, _ := strconv.ParseInt(appIDStr, 10, 32)
-	appID := uint32(appIDUint64)
+
+	//TODO
+	appID := websocket.GetDefaultAppID()
+	roomID := uint32(appIDUint64)
 
 	logrus.WithFields(logrus.Fields{
-		"appID":   appID,
+		"roomID":  roomID,
 		"userID":  userID,
 		"msgID":   msgID,
 		"message": message,
@@ -54,7 +57,7 @@ func SendMessageAll(ctx *gin.Context) {
 		return
 	}
 
-	sendResults, err := websocket.SendUserMessageAll(appID, userID, msgID, models.MessageCmdMsg, message)
+	sendResults, err := websocket.SendUserMessageAll(appID, roomID, userID, msgID, models.MessageCmdMsg, message)
 	if err != nil {
 		data["sendResultsErr"] = err.Error()
 	}

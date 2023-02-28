@@ -12,18 +12,18 @@ import (
 
 // Index 聊天页面
 func Index(c *gin.Context) {
-	appIDStr := c.Query("appID")
-	appIDUint64, _ := strconv.ParseInt(appIDStr, 10, 32)
-	appID := uint32(appIDUint64)
-	if !websocket.InRoomIDs(appID) {
-		appID = websocket.GetDefaultRoomID()
+	roomIDStr := c.Query("roomID")
+	roomIDUint64, _ := strconv.ParseInt(roomIDStr, 10, 32)
+	roomID := uint32(roomIDUint64)
+	if !websocket.InRoomIDs(roomID) {
+		roomID = websocket.GetDefaultRoomID()
 	}
 
-	fmt.Println("http_request 聊天首页", appID)
+	fmt.Println("http_request 聊天首页", roomID)
 
 	data := gin.H{
 		"title":        "聊天首页",
-		"appID":        appID,
+		"roomID":       roomID,
 		"httpUrl":      viper.GetString("app.httpUrl"),
 		"webSocketUrl": viper.GetString("app.webSocketUrl"),
 	}

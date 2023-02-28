@@ -2,7 +2,7 @@
 <html>
 
 <head>
-    <title>{{ .title }}--房间Id({{ .appID }})</title>
+    <title>{{ .title }}--房间Id({{ .roomID }})</title>
     <style type="text/css">
         /*公共样式*/
         body,
@@ -268,16 +268,16 @@
         <div class="room-list">
             <div>
                 <b>房间列表:</b><br>
-                <a href="/home/index?appID=101">聊天室-Id:101</a>
-                <a href="/home/index?appID=102">聊天室-Id:102</a>
-                <a href="/home/index?appID=103">聊天室-Id:103</a>
-                <a href="/home/index?appID=104">聊天室-Id:104</a>
+                <a href="/home/index?roomID=101">聊天室-Id:101</a>
+                <a href="/home/index?roomID=102">聊天室-Id:102</a>
+                <a href="/home/index?roomID=103">聊天室-Id:103</a>
+                <a href="/home/index?roomID=104">聊天室-Id:104</a>
             </div>
         </div>
 
         <script src="http://91vh.com/js/jquery-2.1.4.min.js"></script>
         <script type="text/javascript">
-            appID = {{ .appID }};
+            roomID = {{ .roomID }};
 
             function currentTime() {
                 let timeStamp = (new Date()).valueOf();
@@ -381,13 +381,13 @@
                 // person = prompt("请输入你的名字", "hello-" + currentTime());
                 // if (person != null) {
                 //     console.log("用户准备登陆:" + person);
-                //     ws.send('{"seq":"' + sendID() + '","cmd":"login","data":{"userID":"' + person + '","appID":'+ appID +'}}');
+                //     ws.send('{"seq":"' + sendID() + '","cmd":"login","data":{"userID":"' + person + '","roomID":'+ roomID +'}}');
                 // }
 
                 person = getName();
                 // person = randomNumber(10000, 99999)
                 console.log("用户准备登陆:" + person);
-                ws.send('{"seq":"' + sendID() + '","cmd":"login","data":{"userID":"' + person + '","appID":' + appID + '}}');
+                ws.send('{"seq":"' + sendID() + '","cmd":"login","data":{"userID":"' + person + '","roomID":' + roomID + '}}');
 
                 getMessageList()
 
@@ -443,7 +443,7 @@
                 console.log("button 点击:" + msg);
                 if (msg !== "") {
                     /* var data = {
-                             appID: appID,
+                             roomID: roomID,
                              userID: person,
                              msgID: sendID(),
                              message: msg,
@@ -457,7 +457,7 @@
                         type: "POST",
                         url: 'http://{{ .httpUrl }}/user/sendMessageAll',
                         data: {
-                            appID: appID,
+                            roomID: roomID,
                             userID: person,
                             msgID: sendID(),
                             message: msg,
@@ -477,7 +477,7 @@
             function getUserList() {
                 $.ajax({
                     type: "GET",
-                    url: "http://{{ .httpUrl }}/user/list?appID=" + appID,
+                    url: "http://{{ .httpUrl }}/user/list?roomID=" + roomID,
                     dataType: "json",
                     success: function (data) {
                         console.log("user list:" + data.code + " userList:" + data.data.userList);
@@ -504,7 +504,7 @@
             function getMessageList() {
                 $.ajax({
                     type: "GET",
-                    url: "http://{{ .httpUrl }}/user/historyMessageList?appID=" + appID,
+                    url: "http://{{ .httpUrl }}/user/historyMessageList?roomID=" + roomID,
                     dataType: "json",
                     success: function (res) {
                         console.log("message list:" + res.code + " messageList:" + res.data.data);

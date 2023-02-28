@@ -235,7 +235,7 @@ func (manager *ClientManager) EventLogin(login *login) {
 	}).Info("EventLogin 用户登录")
 
 	orderID := helper.GetOrderIDTime()
-	SendUserMessageAll(login.AppID, login.UserID, orderID, models.MessageCmdEnter, "哈喽~")
+	SendUserMessageAll(login.AppID, login.RoomID, login.UserID, orderID, models.MessageCmdEnter, "哈喽~")
 }
 
 // EventUnregister 用户断开连接
@@ -263,7 +263,7 @@ func (manager *ClientManager) EventUnregister(client *Client) {
 
 	if client.UserID != "" {
 		orderID := helper.GetOrderIDTime()
-		SendUserMessageAll(client.AppID, client.UserID, orderID, models.MessageCmdExit, "用户已经离开~")
+		SendUserMessageAll(client.AppID, client.RoomID, client.UserID, orderID, models.MessageCmdExit, "用户已经离开~")
 	}
 }
 

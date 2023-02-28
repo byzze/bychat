@@ -88,7 +88,8 @@ func ProcessData(c *Client, message []byte) {
 
 	logrus.WithFields(logrus.Fields{
 		"Addr":   c.Addr,
-		"AppId":  c.AppID,
+		"AppID":  c.AppID,
+		"RoomID": c.RoomID,
 		"UserId": c.UserID,
 		"cmd":    cmd,
 		"code":   code,

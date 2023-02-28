@@ -70,12 +70,14 @@ func Heartbeat(c *Client, seq string, message []byte) (code uint32, msg string, 
 	logrus.WithFields(logrus.Fields{
 		"AppId":  c.AppID,
 		"UserId": c.UserID,
+		"RoomID": c.RoomID,
 	}).Info("webSocket_request 心跳接口")
 
 	if !c.IsLogin() {
 		logrus.WithFields(logrus.Fields{
 			"AppId":  c.AppID,
 			"UserId": c.UserID,
+			"RoomID": c.RoomID,
 			"seq":    seq,
 		}).Info("心跳接口 用户未登录")
 		code = common.NotLoggedIn

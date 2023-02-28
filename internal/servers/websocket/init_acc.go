@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	defaultAppID = 1 // 默认平台ID web
+	defaultAppID = iota // 默认平台ID web
 )
 const (
 	defaultRoomID = 101 // 默认房间ID
@@ -22,7 +22,7 @@ var (
 	clientManager = NewClientManager()                     // 管理者
 	roomIDs       = []uint32{defaultRoomID, 102, 103, 104} // 全部的平台
 
-	appIDs = []uint32{defaultRoomID, 2, 3, 4} // 全部的平台
+	appIDs = []uint32{defaultRoomID, 1, 2, 3} // 全部的平台
 
 	serverIP   string
 	serverPort string
@@ -65,6 +65,12 @@ func InRoomIDs(roomID uint32) (inRoomID bool) {
 // GetDefaultRoomID 获取df id
 func GetDefaultRoomID() (roomID uint32) {
 	roomID = defaultRoomID
+	return
+}
+
+// GetDefaultRoomID 获取df id
+func GetDefaultAppID() (appID uint32) {
+	appID = defaultAppID
 	return
 }
 
