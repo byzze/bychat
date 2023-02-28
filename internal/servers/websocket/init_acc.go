@@ -12,27 +12,30 @@ import (
 )
 
 const (
-	defaultAppId = 101 // 默认平台Id
+	defaultAppID = 101 // 默认平台ID
 )
 
 var (
 	clientManager = NewClientManager()                    // 管理者
-	appIds        = []uint32{defaultAppId, 102, 103, 104} // 全部的平台
+	appIds        = []uint32{defaultAppID, 102, 103, 104} // 全部的平台
 
 	serverIP   string
 	serverPort string
 )
 
+// GetAppIds 获取id
 func GetAppIds() []uint32 {
 	return appIds
 }
 
-func GetServer() (server *models.Server) {
-	server = models.NewServer(serverIP, serverPort)
+// GetServerNode 获取id
+func GetServerNode() (server *models.ServerNode) {
+	server = models.NewServerNode(serverIP, serverPort)
 	return
 }
 
-func IsLocal(server *models.Server) (isLocal bool) {
+// IsLocal 校验本地
+func IsLocal(server *models.ServerNode) (isLocal bool) {
 	if server.IP == serverIP && server.Port == serverPort {
 		isLocal = true
 	}
@@ -40,7 +43,6 @@ func IsLocal(server *models.Server) (isLocal bool) {
 }
 
 func InAppIds(appID uint32) (inAppID bool) {
-
 	for _, value := range appIds {
 		if value == appID {
 			inAppID = true
@@ -50,16 +52,15 @@ func InAppIds(appID uint32) (inAppID bool) {
 	return
 }
 
+// GetDefaultAppID 获取df id
 func GetDefaultAppID() (appID uint32) {
-	appID = defaultAppId
-
+	appID = defaultAppID
 	return
 }
 
-// 启动程序
+// StartWebSocket 启动程序
 func StartWebSocket() {
-
-	serverIP = helper.GetServerIp()
+	serverIP = helper.GetServerNodeIP()
 
 	webSocketPort := viper.GetString("app.webSocketPort")
 	rpcPort := viper.GetString("app.rpcPort")
@@ -76,7 +77,6 @@ func StartWebSocket() {
 }
 
 func wsPage(w http.ResponseWriter, req *http.Request) {
-
 	// 升级协议
 	conn, err := (&websocket.Upgrader{CheckOrigin: func(r *http.Request) bool {
 		logrus.Info("升级协议", "ua:", r.Header["User-Agent"], "referer:", r.Header["Referer"])

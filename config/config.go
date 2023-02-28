@@ -1,19 +1,18 @@
 package config
 
 import (
-	"fmt"
-
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
 
+// InitConfig 初始化配置
 func InitConfig() {
 	viper.SetConfigName("config/app")
 	viper.AddConfigPath(".")
 
 	err := viper.ReadInConfig()
 	if err != nil {
-		panic(fmt.Errorf("Fatal error config file: %s \n", err))
+		logrus.Panic("Fatal error config file:", err)
 	}
 	// 获取app属性，redis属性
 	logrus.Info("config app:", viper.Get("app"))

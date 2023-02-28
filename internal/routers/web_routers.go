@@ -8,8 +8,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// 初始化路由
-func Init(router *gin.Engine) {
+// InitWeb 初始化路由
+func InitWeb(router *gin.Engine) {
 	router.LoadHTMLGlob("web/**/*")
 
 	// 用户组
@@ -18,7 +18,8 @@ func Init(router *gin.Engine) {
 		userRouter.GET("/list", user.List)
 		// userRouter.GET("/online", user.Online)
 		// userRouter.POST("/sendMessage", user.SendMessage)
-		// userRouter.POST("/sendMessageAll", user.SendMessageAll)
+		userRouter.POST("/sendMessageAll", user.SendMessageAll)
+		userRouter.GET("/historyMessageList", user.HistoryMessageList)
 	}
 
 	// 系统

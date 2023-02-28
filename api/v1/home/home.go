@@ -1,6 +1,7 @@
 package home
 
 import (
+	"bychat/internal/servers/websocket"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -9,14 +10,14 @@ import (
 	"github.com/spf13/viper"
 )
 
-// 聊天页面
+// Index 聊天页面
 func Index(c *gin.Context) {
 	appIDStr := c.Query("appID")
 	appIDUint64, _ := strconv.ParseInt(appIDStr, 10, 32)
 	appID := uint32(appIDUint64)
-	// if !websocket.InAppIds(appId) {
-	// 	appId = websocket.GetDefaultAppId()
-	// }
+	if !websocket.InAppIds(appID) {
+		appID = websocket.GetDefaultAppID()
+	}
 
 	fmt.Println("http_request 聊天首页", appID)
 

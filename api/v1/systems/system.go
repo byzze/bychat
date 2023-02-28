@@ -3,13 +3,14 @@ package systems
 import (
 	"bychat/api/v1/base"
 	"bychat/internal/common"
+	"bychat/internal/servers/websocket"
 	"runtime"
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 )
 
-// 查询系统状态
+// Status 查询系统状态
 func Status(c *gin.Context) {
 
 	isDebug := c.Query("isDebug")
@@ -23,5 +24,9 @@ func Status(c *gin.Context) {
 	// goroutine 的数量
 	data["numGoroutine"] = numGoroutine
 	data["numCPU"] = numCPU
+
+	// ClientManager 信息
+	data["managerInfo"] = websocket.GetManagerInfo(isDebug)
+
 	base.Response(c, common.OK, "", data)
 }

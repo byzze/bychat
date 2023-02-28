@@ -22,11 +22,10 @@ type login struct {
 // GetKey 获取 key
 func (l *login) GetKey() (key string) {
 	key = GetUserKey(l.AppID, l.UserID)
-
 	return
 }
 
-// 用户连接
+// Client 用户连接
 type Client struct {
 	Addr          string          // 客户端地址
 	Socket        *websocket.Conn // 用户连接
@@ -38,7 +37,7 @@ type Client struct {
 	LoginTime     uint64          // 登录时间 登录以后才有
 }
 
-// 初始化
+// NewClient 初始化
 func NewClient(addr string, socket *websocket.Conn, firstTime uint64) (client *Client) {
 	client = &Client{
 		Addr:          addr,
@@ -61,19 +60,22 @@ func (c *Client) GetKey() (key string) {
 func (c *Client) read() {
 	defer func() {
 		if r := recover(); r != nil {
-			logrus.Info("write stop", string(debug.Stack()), r)
+			logrus.Error("write stop", string(debug.Stack()), r)
 		}
 	}()
 
 	defer func() {
 		logrus.Info("读取客户端数据 关闭send", c)
-		close(c.Send)
+		// close(c.Send)
 	}()
 
 	for {
 		_, message, err := c.Socket.ReadMessage()
 		if err != nil {
-			logrus.Info("读取客户端数据 错误", c.Addr, err)
+			logrus.WithFields(logrus.Fields{
+				"Addr": c.Addr,
+				"err":  err,
+			}).Error("读取客户端数据 错误")
 			return
 		}
 
@@ -87,7 +89,7 @@ func (c *Client) read() {
 func (c *Client) write() {
 	defer func() {
 		if r := recover(); r != nil {
-			logrus.Info("write stop", string(debug.Stack()), r)
+			logrus.Error("write stop", string(debug.Stack()), r)
 		}
 	}()
 
@@ -102,7 +104,7 @@ func (c *Client) write() {
 		case message, ok := <-c.Send:
 			if !ok {
 				// 发送数据错误 关闭连接
-				logrus.Info("Client发送数据 关闭连接", c.Addr, "ok", ok)
+				logrus.Info("Client发送数据 关闭连接:", c.Addr, "ok:", ok)
 				return
 			}
 			c.Socket.WriteMessage(websocket.TextMessage, message)
@@ -118,7 +120,7 @@ func (c *Client) SendMsg(msg []byte) {
 
 	defer func() {
 		if r := recover(); r != nil {
-			logrus.Info("SendMsg stop:", r, string(debug.Stack()))
+			logrus.Error("SendMsg stop:", r, string(debug.Stack()))
 		}
 	}()
 
@@ -130,7 +132,7 @@ func (c *Client) close() {
 	close(c.Send)
 }
 
-// 用户登录
+// Login 用户登录
 func (c *Client) Login(appID uint32, userID string, loginTime uint64) {
 	c.AppID = appID
 	c.UserID = userID
@@ -139,13 +141,13 @@ func (c *Client) Login(appID uint32, userID string, loginTime uint64) {
 	c.Heartbeat(loginTime)
 }
 
-// 用户心跳
+// Heartbeat 用户心跳
 func (c *Client) Heartbeat(currentTime uint64) {
 	c.HeartbeatTime = currentTime
 	return
 }
 
-// 心跳超时
+// IsHeartbeatTimeout 心跳超时
 func (c *Client) IsHeartbeatTimeout(currentTime uint64) (timeout bool) {
 	if c.HeartbeatTime+heartbeatExpirationTime <= currentTime {
 		timeout = true
@@ -153,7 +155,7 @@ func (c *Client) IsHeartbeatTimeout(currentTime uint64) (timeout bool) {
 	return
 }
 
-// 是否登录了
+// IsLogin 是否登录了
 func (c *Client) IsLogin() (isLogin bool) {
 	// 用户登录了
 	if c.UserID != "" {

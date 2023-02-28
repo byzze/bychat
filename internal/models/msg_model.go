@@ -2,8 +2,10 @@ package models
 
 import "bychat/internal/common"
 
+// 消息类型
 const (
-	MessageTypeText     = "text"
+	MessageTypeText = "text"
+
 	MessageCmdMsg       = "msg"
 	MessageCmdEnter     = "enter"
 	MessageCmdExit      = "exit"
@@ -19,8 +21,8 @@ type Message struct {
 	From   string `json:"from"`   // 发送者
 }
 
-// NewTestMsg
-func NewTestMsg(from string, Msg string) (message *Message) {
+// NewTextMsg 文本消息构造
+func NewTextMsg(from string, Msg string) (message *Message) {
 	message = &Message{
 		Type: MessageTypeText,
 		From: from,
@@ -32,28 +34,28 @@ func NewTestMsg(from string, Msg string) (message *Message) {
 
 // getTextMsgData 获取文本消息
 func getTextMsgData(cmd, uuid, msgID, message string) string {
-	textMsg := NewTestMsg(uuid, message)
+	textMsg := NewTextMsg(uuid, message)
 	head := NewResponseHead(msgID, cmd, common.OK, "Ok", textMsg)
 
 	return head.String()
 }
 
-// 文本消息
+// GetMsgData 文本消息
 func GetMsgData(uuid, msgID, cmd, message string) string {
 	return getTextMsgData(cmd, uuid, msgID, message)
 }
 
-// 文本消息
+// GetTextMsgData 文本消息
 func GetTextMsgData(uuid, msgID, message string) string {
 	return getTextMsgData("msg", uuid, msgID, message)
 }
 
-// 用户进入消息
+// GetTextMsgDataEnter 用户进入消息
 func GetTextMsgDataEnter(uuid, msgID, message string) string {
 	return getTextMsgData("enter", uuid, msgID, message)
 }
 
-// 用户退出消息
+// GetTextMsgDataExit 用户退出消息
 func GetTextMsgDataExit(uuid, msgID, message string) string {
 	return getTextMsgData("exit", uuid, msgID, message)
 }

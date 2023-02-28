@@ -1,5 +1,6 @@
 package common
 
+// OK a
 const (
 	OK                 = 0    // Success
 	NotLoggedIn        = 1000 // 未登录

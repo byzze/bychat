@@ -30,7 +30,9 @@ import (
  ***	1、https://www.jianshu.com/p/301aabc06972
  ***	2、https://www.cnblogs.com/chaselogs/p/11301940.html
 ****/
-func GetServerIp() string {
+
+// GetServerNodeIP 获取服务节点ip
+func GetServerNodeIP() string {
 	conn, err := net.Dial("udp", "8.8.8.8:53")
 	if err != nil {
 		return ""
@@ -63,7 +65,7 @@ func externalIP() (net.IP, error) {
 			return nil, err
 		}
 		for _, addr := range addrs {
-			ip := getIpFromAddr(addr)
+			ip := getIPFromAddr(addr)
 			if ip == nil {
 				continue
 			}
@@ -73,7 +75,7 @@ func externalIP() (net.IP, error) {
 	return nil, err
 }
 
-func getIpFromAddr(addr net.Addr) net.IP {
+func getIPFromAddr(addr net.Addr) net.IP {
 	var ip net.IP
 	switch v := addr.(type) {
 	case *net.IPNet:

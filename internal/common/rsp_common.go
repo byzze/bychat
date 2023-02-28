@@ -1,12 +1,14 @@
 package common
 
-type JsonResult struct {
+// JSONResult 响应结果
+type JSONResult struct {
 	Code uint32      `json:"code"`
 	Msg  string      `json:"msg"`
 	Data interface{} `json:"data"`
 }
 
-func Response(code uint32, message string, data interface{}) JsonResult {
+// Response 响应结果
+func Response(code uint32, message string, data interface{}) JSONResult {
 	message = GetErrorMessage(code, message)
 	jsonMap := grantMap(code, message, data)
 
@@ -14,8 +16,8 @@ func Response(code uint32, message string, data interface{}) JsonResult {
 }
 
 // 按照接口格式生成原数据数组
-func grantMap(code uint32, message string, data interface{}) JsonResult {
-	jsonMap := JsonResult{
+func grantMap(code uint32, message string, data interface{}) JSONResult {
+	jsonMap := JSONResult{
 		Code: code,
 		Msg:  message,
 		Data: data,

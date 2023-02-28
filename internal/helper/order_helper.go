@@ -5,7 +5,8 @@ import (
 	"time"
 )
 
-func GetOrderIdTime() (orderID string) {
+// GetOrderIDTime 获取时间戳
+func GetOrderIDTime() (orderID string) {
 	currentTime := time.Now().Nanosecond()
 	orderID = fmt.Sprintf("%d", currentTime)
 	return

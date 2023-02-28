@@ -3,19 +3,22 @@ package models
 import "encoding/json"
 
 /************************  响应数据  **************************/
+
+// Head 消息头
 type Head struct {
 	Seq      string    `json:"seq"`      // 消息的Id
 	Cmd      string    `json:"cmd"`      // 消息的cmd 动作
 	Response *Response `json:"response"` // 消息体
 }
 
+// Response 响应结构
 type Response struct {
 	Code    uint32      `json:"code"`
 	CodeMsg string      `json:"codeMsg"`
 	Data    interface{} `json:"data"` // 数据 json
 }
 
-// push 数据结构体
+// PushMsg 数据结构体
 type PushMsg struct {
 	Seq  string `json:"seq"`
 	UUID uint64 `json:"uuid"`
@@ -23,7 +26,7 @@ type PushMsg struct {
 	Msg  string `json:"msg"`
 }
 
-// 设置返回消息
+// NewResponseHead 设置返回消息
 func NewResponseHead(seq string, cmd string, code uint32, codeMsg string, data interface{}) *Head {
 	response := NewResponse(code, codeMsg, data)
 
@@ -36,6 +39,7 @@ func (h *Head) String() (headStr string) {
 	return
 }
 
+// NewResponse 构造返返回体
 func NewResponse(code uint32, codeMsg string, data interface{}) *Response {
 	return &Response{Code: code, CodeMsg: codeMsg, Data: data}
 }
