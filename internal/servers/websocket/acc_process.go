@@ -4,7 +4,6 @@ import (
 	"bychat/internal/common"
 	"bychat/internal/models"
 	"encoding/json"
-	"fmt"
 	"sync"
 
 	"github.com/sirupsen/logrus"
@@ -50,7 +49,7 @@ func ProcessData(c *Client, message []byte) {
 	}
 	requestData, err := json.Marshal(req.Data)
 	if err != nil {
-		fmt.Println("处理数据 json Marshal", err)
+		logrus.Error("处理数据 json Marshal", err)
 		c.SendMsg([]byte("处理数据失败"))
 		return
 	}
@@ -87,11 +86,8 @@ func ProcessData(c *Client, message []byte) {
 	c.SendMsg(headByte)
 
 	logrus.WithFields(logrus.Fields{
-		"Addr":   c.Addr,
-		"AppID":  c.AppID,
-		"RoomID": c.RoomID,
-		"UserId": c.UserID,
-		"cmd":    cmd,
-		"code":   code,
+		"cmd":      cmd,
+		"code":     code,
+		"headByte": headByte,
 	}).Info("acc_response send")
 }

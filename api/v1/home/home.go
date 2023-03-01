@@ -2,11 +2,11 @@ package home
 
 import (
 	"bychat/internal/servers/websocket"
-	"fmt"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
 
@@ -19,13 +19,14 @@ func Index(c *gin.Context) {
 		roomID = websocket.GetDefaultRoomID()
 	}
 
-	fmt.Println("http_request 聊天首页", roomID)
+	logrus.Info("http_request 聊天首页", roomID)
 
 	data := gin.H{
 		"title":        "聊天首页",
 		"roomID":       roomID,
+		"appID":        websocket.GetDefaultAppID(),
 		"httpUrl":      viper.GetString("app.httpUrl"),
 		"webSocketUrl": viper.GetString("app.webSocketUrl"),
 	}
-	c.HTML(http.StatusOK, "index.tpl", data)
+	c.HTML(http.StatusOK, "index.html", data)
 }

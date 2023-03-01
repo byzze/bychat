@@ -12,14 +12,14 @@ const (
 	messageZSortKey = "acc:zset:message:roomid:" // 房间聊天数据
 )
 
-func getmessageZSortKey(appID uint32) (key string) {
-	key = fmt.Sprintf("%s%d", messageZSortKey, appID)
+func getmessageZSortKey(roomID uint32) (key string) {
+	key = fmt.Sprintf("%s%d", messageZSortKey, roomID)
 	return
 }
 
 // ZSetMessage 设置数据
-func ZSetMessage(appID uint32, message string) (err error) {
-	key := getmessageZSortKey(appID)
+func ZSetMessage(roomID uint32, message string) (err error) {
+	key := getmessageZSortKey(roomID)
 
 	currentTime := float64(time.Now().Unix())
 
@@ -36,8 +36,8 @@ func ZSetMessage(appID uint32, message string) (err error) {
 }
 
 // ZGetMessageAll 获取数据
-func ZGetMessageAll(appID uint32) (res []string, err error) {
-	key := getmessageZSortKey(appID)
+func ZGetMessageAll(roomID uint32) (res []string, err error) {
+	key := getmessageZSortKey(roomID)
 	redisClient := redislib.GetClient()
 
 	res, err = redisClient.ZRange(key, 0, -1).Result()
@@ -50,9 +50,9 @@ func ZGetMessageAll(appID uint32) (res []string, err error) {
 	return
 }
 
-// ZGetMessageAll 获取数据
-func ZGetMessageByOffset(appID uint32, start, limit int64) (res []string, err error) {
-	key := getmessageZSortKey(appID)
+// ZGetMessageByOffset 获取数据
+func ZGetMessageByOffset(roomID uint32, start, limit int64) (res []string, err error) {
+	key := getmessageZSortKey(roomID)
 	redisClient := redislib.GetClient()
 
 	res, err = redisClient.ZRange(key, start, limit).Result()

@@ -1,6 +1,7 @@
 package websocket
 
 import (
+	"bychat/internal/models"
 	"runtime/debug"
 
 	"github.com/gorilla/websocket"
@@ -12,31 +13,16 @@ const (
 	heartbeatExpirationTime = 6 * 60
 )
 
-// 用户登录
-type login struct {
-	AppID  uint32  `json:"appID,omitempty"`
-	RoomID uint32  `json:"roomID,omitempty"`
-	UserID string  `json:"userID,omitempty"`
-	Client *Client `json:"client,omitempty"`
-}
-
-// GetKey 获取 key
-func (l *login) GetKey() (key string) {
-	key = GetUserKey(l.AppID, l.RoomID, l.UserID)
-	return
-}
-
 // Client 用户连接
 type Client struct {
+	AppID         uint32          // 登录的平台ID app/web/ios
 	Addr          string          // 客户端地址
 	Socket        *websocket.Conn // 用户连接
 	Send          chan []byte     // 待发送的数据
-	AppID         uint32          // 登录的平台ID app/web/ios
-	RoomID        uint32          // 房间ID
-	UserID        string          // 用户ID，用户登录以后才有
 	FirstTime     uint64          // 首次连接事件
 	HeartbeatTime uint64          // 用户上次心跳时间
 	LoginTime     uint64          // 登录时间 登录以后才有
+	UserOnline    *models.UserOnline
 }
 
 // NewClient 初始化
@@ -54,7 +40,7 @@ func NewClient(addr string, socket *websocket.Conn, firstTime uint64) (client *C
 
 // GetKey 获取 key
 func (c *Client) GetKey() (key string) {
-	key = GetUserKey(c.AppID, c.RoomID, c.UserID)
+	key = GetUserKey(c.AppID, c.UserOnline.UserID)
 	return
 }
 
@@ -135,12 +121,12 @@ func (c *Client) close() {
 }
 
 // Login 用户登录
-func (c *Client) Login(appID uint32, userID string, loginTime uint64) {
+func (c *Client) Login(appID uint32, userOnline *models.UserOnline) {
+	c.UserOnline = userOnline
+	c.LoginTime = userOnline.LoginTime
 	c.AppID = appID
-	c.UserID = userID
-	c.LoginTime = loginTime
 	// 登录成功=心跳一次
-	c.Heartbeat(loginTime)
+	c.Heartbeat(c.LoginTime)
 }
 
 // Heartbeat 用户心跳
@@ -160,9 +146,32 @@ func (c *Client) IsHeartbeatTimeout(currentTime uint64) (timeout bool) {
 // IsLogin 是否登录了
 func (c *Client) IsLogin() (isLogin bool) {
 	// 用户登录了
-	if c.UserID != "" {
+	if c.UserOnline != nil {
 		isLogin = true
 		return
 	}
 	return
+}
+
+// DeleteRoomUser 移出房间，进入新房间
+func (c *Client) DeleteRoomUser(userOnline *models.UserOnline) {
+	// 是否在房间
+	if c.UserOnline != nil {
+		if list, ok := clientManager.Rooms[c.UserOnline.RoomID]; ok {
+			tmpList := DeleteSlice(list, userOnline)
+			clientManager.Rooms[c.UserOnline.RoomID] = tmpList
+		}
+	}
+}
+
+// DeleteSlice 移位法删除元素
+func DeleteSlice(arr []*models.UserOnline, elem *models.UserOnline) []*models.UserOnline {
+	j := 0
+	for _, v := range arr {
+		if v != elem {
+			arr[j] = v
+			j++
+		}
+	}
+	return arr[:j]
 }

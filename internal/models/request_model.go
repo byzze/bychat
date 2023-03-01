@@ -12,20 +12,28 @@ type Request struct {
 // LoginRequest 登录请求数据
 type LoginRequest struct {
 	ServiceToken string `json:"serviceToken"` // 验证用户是否登录
-	AppID        uint32 `json:"appId,omitempty"`
-	UserID       string `json:"userId,omitempty"`
+	AppID        uint32 `json:"appID,omitempty"`
+	RoomID       uint32 `json:"roomID,omitempty"`
+	UserID       string `json:"userID,omitempty"`
 }
 
 // HeartBeatRequest 心跳请求数据
 type HeartBeatRequest struct {
-	UserID string `json:"userId,omitempty"`
+	UserID string `json:"userID,omitempty"`
 }
 
 // MsgRequest 消息请求
 type MsgRequest struct {
-	AppID   uint32 `json:"appId"`
-	UserID  string `jsong:"userId"`
-	MsgID   string `json:"msgId"`
+	AppID   uint32 `json:"appID"`
+	UserID  string `jsong:"userID"`
+	MsgID   string `json:"msgID"`
 	Message string `json:"message"`
 	Cmd     string `json:"cmd"`
+}
+
+// EnterRoomRequest 进入房间请求数据
+type EnterRoomRequest struct {
+	AppID  uint32 `json:"appID,omitempty"`
+	RoomID uint32 `json:"roomID,omitempty"`
+	UserID string `json:"userID,omitempty"`
 }

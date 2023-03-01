@@ -17,7 +17,7 @@ import (
 const (
 	submitAgainPrefix = "acc:submit:again:" // 数据不重复提交
 
-	seqDuplicatesDefaultTime = 12 * 60 * 60
+	seqDuplicatesDefaultTime = 30
 )
 
 /*********************  查询数据是否处理过  ************************/

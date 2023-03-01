@@ -2,7 +2,7 @@
 <html>
 
 <head>
-    <title>{{ .title }}--房间Id({{ .appID }})</title>
+    <title>{{ .title }}--房间Id({{ .roomID }})</title>
     <style type="text/css">
         /*公共样式*/
         body,
@@ -268,16 +268,21 @@
         <div class="room-list">
             <div>
                 <b>房间列表:</b><br>
-                <a href="/home/index?appID=101">聊天室-Id:101</a>
-                <a href="/home/index?appID=102">聊天室-Id:102</a>
-                <a href="/home/index?appID=103">聊天室-Id:103</a>
-                <a href="/home/index?appID=104">聊天室-Id:104</a>
+                <a href="/home/index">聊天室</a>
+
+                <button onclick="enterRoom(101)">进入聊天室-Id:101</button>
+
+                <button onclick="enterRoom(102)">进入聊天室-Id:102</button>
+
+                <button onclick="enterRoom(103)">进入聊天室-Id:103</button>
+
+                <button onclick="enterRoom(104)">进入聊天室-Id:104</button>
             </div>
         </div>
 
         <script src="http://91vh.com/js/jquery-2.1.4.min.js"></script>
         <script type="text/javascript">
-            appID = {{ .appID }};
+            roomID = {{ .roomID }};
 
             function currentTime() {
                 let timeStamp = (new Date()).valueOf();
@@ -310,6 +315,18 @@
             }
 
             function msg(name, msg) {
+                let html = '<div class="admin-group">' +
+                    '<div class="admin-img" >' + name + '</div>' +
+                    // '<img class="admin-img" src="http://localhost/public/img/aa.jpg" />'+
+                    '<div class="admin-msg">' +
+                    '<i class="triangle-admin"></i>' +
+                    '<span class="admin-reply">' + msg + '</span>' +
+                    '</div>' +
+                    '</div>';
+                return html
+            }
+
+            function historyMsg(name, msg) {
                 let html = '<div class="admin-group">' +
                     '<div class="admin-img" >' + name + '</div>' +
                     // '<img class="admin-img" src="http://localhost/public/img/aa.jpg" />'+
@@ -369,14 +386,14 @@
                 // person = prompt("请输入你的名字", "hello-" + currentTime());
                 // if (person != null) {
                 //     console.log("用户准备登陆:" + person);
-                //     ws.send('{"seq":"' + sendID() + '","cmd":"login","data":{"userID":"' + person + '","appID":'+ appID +'}}');
+                //     ws.send('{"seq":"' + sendID() + '","cmd":"login","data":{"userID":"' + person + '","roomID":'+ roomID +'}}');
                 // }
 
                 person = getName();
                 // person = randomNumber(10000, 99999)
                 console.log("用户准备登陆:" + person);
-                ws.send('{"seq":"' + sendID() + '","cmd":"login","data":{"userID":"' + person + '","appID":' + appID + '}}');
-                // getMessageList()
+                ws.send('{"seq":"' + sendID() + '","cmd":"login","data":{"userID":"' + person + '","appID":' + 0 + '}}');
+
 
                 // 定时心跳
                 setInterval(heartbeat, 30 * 1000)
@@ -410,7 +427,6 @@
             function heartbeat() {
                 console.log("定时心跳:" + person);
                 ws.send('{"seq":"' + sendID() + '","cmd":"heartbeat","data":{}}');
-
             }
 
             // 点击按钮事件
@@ -430,7 +446,7 @@
                 console.log("button 点击:" + msg);
                 if (msg !== "") {
                     /* var data = {
-                             appID: appID,
+                             roomID: roomID,
                              userID: person,
                              msgID: sendID(),
                              message: msg,
@@ -444,7 +460,7 @@
                         type: "POST",
                         url: 'http://{{ .httpUrl }}/user/sendMessageAll',
                         data: {
-                            appID: appID,
+                            roomID: roomID,
                             userID: person,
                             msgID: sendID(),
                             message: msg,
@@ -459,12 +475,12 @@
                 }
             }
 
-            setTimeout(function () { getUserList(); }, 500); // 1秒后将会调用执行
+            // setTimeout(function () { getUserList(); }, 500); // 1秒后将会调用执行
 
             function getUserList() {
                 $.ajax({
                     type: "GET",
-                    url: "http://{{ .httpUrl }}/user/list?appID=" + appID,
+                    url: "http://{{ .httpUrl }}/user/list?roomID=" + roomID,
                     dataType: "json",
                     success: function (data) {
                         console.log("user list:" + data.code + " userList:" + data.data.userList);
@@ -487,23 +503,75 @@
                     }
                 });
             }
-            function getMessageList() {
+            var start = 0
+            var limit = 5
+            function getHistoryMessageList() {
                 $.ajax({
                     type: "GET",
-                    url: "http://{{ .httpUrl }}/user/historyMessageList?appID=" + appID,
+                    url: "http://{{ .httpUrl }}/user/historyMessageList?roomID=" + roomID + "&start=" + start + "&limit=" + limit,
                     dataType: "json",
                     success: function (res) {
-                        console.log("user list:" + res.code + " messageList:" + res.data.data);
+                        //console.log("message list:" + res.code + " messageList:" + res.data);
                         if (res.code != 0) {
                             return false
                         }
+                        start = res.data.start
+                        limit = res.data.limit
+                        console.log("message list====:" + res.data)
                         //i表示在data中的索引位置，n表示包含的信息的对象
                         $.each(res.data.data, function (i, n) {
-                            data_array = JSON.parse(n.response);
-                            data = data_array.response.data
-                            addChatWith(msg(data.from, data.msg))
+
+                            data_array = JSON.parse(n);
+                            data = data_array.response
+                            console.log("message list----:", data_array.cmd)
+                            if (data_array.cmd != "msg") {
+                                return true
+                            }
+                            if (data.data.from === person) {
+                                data = data_array.response.data
+                                addChatWith(myMsg(data.data.from, data.data.msg))
+                            } else {
+                                addChatWith(msg(data.data.from, data.data.msg))
+                            }
                         });
                         return false
+                    }
+                });
+            }
+            function enterRoom(rid) {
+                exitRoom(roomID)
+                roomID = rid
+                $.ajax({
+                    type: "POST",
+                    url: 'http://{{ .httpUrl }}/user/enter',
+                    data: {
+                        roomID: rid,
+                        userID: person,
+                        appID: 0,
+                    },
+                    contentType: "application/x-www-form-urlencoded",
+                    success: function (data) {
+                        console.log(data);
+                        addChatWith(myMsg(person, "我进入了" + rid + "房间"))
+                        getUserList()
+                        getHistoryMessageList()
+                        $("input[name='msg']").val("");
+                    }
+                });
+            }
+            function exitRoom(rid) {
+                roomID = 0
+                $.ajax({
+                    type: "POST",
+                    url: 'http://{{ .httpUrl }}/user/exit',
+                    data: {
+                        roomID: rid,
+                        userID: person,
+                        appID: 0,
+                    },
+                    contentType: "application/x-www-form-urlencoded",
+                    success: function (data) {
+                        console.log(data);
                     }
                 });
             }

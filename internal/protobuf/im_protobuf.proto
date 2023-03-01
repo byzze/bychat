@@ -16,7 +16,7 @@ service AccServer {
     // 给这台机器的房间内所有用户发送消息
     rpc SendMsgAll (SendMsgAllReq) returns (SendMsgAllRsp) {}
     // 获取用户列表
-    rpc GetUserList (GetUserListReq) returns (GetUserListRsp) {}
+    rpc GetUserList (GetRoomUserListReq) returns (GetRoomUserListRsp) {}
 }
 
 // 查询用户是否在线
@@ -34,12 +34,13 @@ message QueryUsersOnlineRsp {
 // 发送消息
 message SendMsgReq {
     string seq = 1; // 序列号
-    uint32 appID = 2; // appID/房间Id
-    string userId = 3; // 用户ID
-    string cms = 4; // cms 动作: msg/enter/exit
-    string type = 5; // type 消息类型，默认是 text
-    string msg = 6; // msg
-    bool isLocal = 7; // 是否查询本机 acc内部调用为:true(本机查询不到即结束)
+    uint32 appID = 2; // appID
+    uint32 roomID = 3; // 房间Id
+    string userId = 4; // 用户ID
+    string cms = 5; // cms 动作: msg/enter/exit
+    string type = 6; // type 消息类型，默认是 text
+    string msg = 7; // msg
+    bool isLocal = 8; // 是否查询本机 acc内部调用为:true(本机查询不到即结束)
 }
 
 message SendMsgRsp {
@@ -51,11 +52,12 @@ message SendMsgRsp {
 // 给这台机器的房间内所有用户发送消息
 message SendMsgAllReq {
     string seq = 1; // 序列号
-    uint32 appID = 2; // appID/房间Id
-    string userId = 3; // 不发送的用户ID
-    string cms = 4; // cms 动作: msg/enter/exit
-    string type = 5; // type 消息类型，默认是 text
-    string msg = 6; // msg
+    uint32 appID = 2; // appID
+    uint32 roomID = 3; // 房间Id
+    string userId = 4; // 不发送的用户ID
+    string cms = 5; // cms 动作: msg/enter/exit
+    string type = 6; // type 消息类型，默认是 text
+    string msg = 7; // msg
 }
 
 message SendMsgAllRsp {
@@ -65,11 +67,12 @@ message SendMsgAllRsp {
 }
 
 // 获取用户列表
-message GetUserListReq {
+message GetRoomUserListReq {
     uint32 appID = 1;
+    uint32 roomID = 2;
 }
 
-message GetUserListRsp {
+message GetRoomUserListRsp {
     uint32 retCode = 1;
     string errMsg = 2;
     repeated string userId = 3;

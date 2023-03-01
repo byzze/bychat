@@ -12,17 +12,35 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// List 查看全部在线用户
-func List(ctx *gin.Context) {
+// Param 参数
+type Param struct {
+	AppID  uint32 `form:"appID" json:"appID"  binding:"-"`
+	RoomID uint32 `form:"roomID" json:"roomID"  binding:"required"`
+	UserID string `form:"userID" json:"userID" `
+	Start  int64  `form:"start"`
+	Limit  int64  `form:"limit"`
+}
+
+// GetRoomUserList 查看全部在线用户
+func GetRoomUserList(ctx *gin.Context) {
+	data := make(map[string]interface{})
+
 	roomIDStr := ctx.Query("roomID")
 	roomIDUint64, _ := strconv.ParseInt(roomIDStr, 10, 32)
 	roomID := uint32(roomIDUint64)
+	appID := websocket.GetDefaultAppID()
 
-	logrus.Info("http_request 查看全部在线用户 roomID:", roomID)
+	if roomID == 0 {
+		base.Response(ctx, common.OK, "参数错误", data)
+		return
+	}
 
-	data := make(map[string]interface{})
+	logrus.WithFields(logrus.Fields{
+		"roomID": roomID,
+		"appID":  appID,
+	}).Info("http_request 查看全部在线用户 roomID:", roomID)
 
-	userList := websocket.GetUserList(roomID)
+	userList := websocket.GetRoomUserList(appID, roomID)
 	data["userList"] = userList
 	data["userCount"] = len(userList)
 
@@ -31,16 +49,21 @@ func List(ctx *gin.Context) {
 
 // SendMessageAll 发送所有人消息
 func SendMessageAll(ctx *gin.Context) {
-	appIDStr := ctx.PostForm("appID")
+	data := make(map[string]interface{})
+
+	roomIDStr := ctx.PostForm("roomID")
 	userID := ctx.PostForm("userID")
 	msgID := ctx.PostForm("msgID")
 	message := ctx.PostForm("message")
 
-	appIDUint64, _ := strconv.ParseInt(appIDStr, 10, 32)
-
-	//TODO
+	roomIDUint64, _ := strconv.ParseInt(roomIDStr, 10, 32)
+	roomID := uint32(roomIDUint64)
 	appID := websocket.GetDefaultAppID()
-	roomID := uint32(appIDUint64)
+
+	if roomID == 0 {
+		base.Response(ctx, common.OK, "参数错误", data)
+		return
+	}
 
 	logrus.WithFields(logrus.Fields{
 		"roomID":  roomID,
@@ -48,8 +71,6 @@ func SendMessageAll(ctx *gin.Context) {
 		"msgID":   msgID,
 		"message": message,
 	}).Info("SendMessageAll")
-
-	data := make(map[string]interface{})
 
 	if cache.SeqDuplicates(msgID) {
 		logrus.Info("数据重复：", msgID)
@@ -69,17 +90,67 @@ func SendMessageAll(ctx *gin.Context) {
 
 // HistoryMessageList 获取聊天消息
 func HistoryMessageList(ctx *gin.Context) {
-	appIDStr := ctx.Query("appID")
-	appIDUint64, _ := strconv.ParseInt(appIDStr, 10, 32)
-	appID := uint32(appIDUint64)
-
+	var param Param
 	data := make(map[string]interface{})
-	res, err := cache.ZGetMessageAll(appID)
-	if err != nil {
-		logrus.Error("HistoryMessageList", err)
+
+	if err := ctx.ShouldBindQuery(&param); err != nil {
 		base.Response(ctx, common.OK, "", data)
 		return
 	}
+
+	if param.RoomID == 0 {
+		base.Response(ctx, common.OK, "参数错误", data)
+		return
+	}
+
+	res, err := cache.ZGetMessageByOffset(param.RoomID, param.Start, param.Limit)
+	if err != nil {
+		logrus.Error("ZGetMessageByOffset", err)
+		base.Response(ctx, common.OK, "", data)
+		return
+	}
+
 	data["data"] = res
+	data["start"] = param.Start + param.Limit
+	data["limit"] = param.Limit
+	base.Response(ctx, common.OK, "", data)
+}
+
+// EnterRoom 进入房间
+func EnterRoom(ctx *gin.Context) {
+	var param Param
+	data := make(map[string]interface{})
+
+	if err := ctx.Bind(&param); err != nil {
+		data["err"] = err.Error()
+		logrus.Error("EnterRoom Param Failed", err)
+		base.Response(ctx, common.OK, "参数错误", data)
+		return
+	}
+
+	if param.RoomID == 0 {
+		base.Response(ctx, common.OK, "参数错误", data)
+		return
+	}
+
+	websocket.EnterRoom(param.AppID, param.RoomID, param.UserID)
+
+	base.Response(ctx, common.OK, "", data)
+}
+
+// ExitRoom 离开房间
+func ExitRoom(ctx *gin.Context) {
+	var param Param
+	data := make(map[string]interface{})
+
+	if err := ctx.Bind(&param); err != nil {
+		data["err"] = err.Error()
+		logrus.Error("EnterRoom Param Failed", err)
+		base.Response(ctx, common.OK, "参数错误", data)
+		return
+	}
+
+	websocket.ExitRoom(param.AppID, param.UserID)
+
 	base.Response(ctx, common.OK, "", data)
 }

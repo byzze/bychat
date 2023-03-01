@@ -10,37 +10,42 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// GetUserList 获取全部用户
-func GetUserList(appID uint32) (userList []string) {
-	logrus.Info("获取全部用户", appID)
+// GetRoomUserList 获取全部用户
+func GetRoomUserList(appID, roomID uint32) (userList []string) {
+	logrus.WithFields(logrus.Fields{
+		"roomID": roomID,
+	}).Info("获取全部用户")
 
-	userList = clientManager.GetUserList(appID)
+	key := roomID
+	for _, v := range clientManager.Rooms[key] {
+		userList = append(userList, v.UserID)
+	}
 	return
 }
 
 // GetUserClient 获取用户所在的连接
-func GetUserClient(appID, roomID uint32, userID string) (client *Client) {
-	client = clientManager.GetUserClient(appID, roomID, userID)
+func GetUserClient(roomID uint32, userID string) (client *Client) {
+	client = clientManager.GetUserClient(roomID, userID)
 	return
 }
 
 // SendUserMessage 给用户发送消息
-func SendUserMessage(appID, roomID uint32, userID string, msgID, message string) (sendResults bool, err error) {
+func SendUserMessage(roomID uint32, userID string, msgID, message string) (sendResults bool, err error) {
 	// 封装发生数据格式
 	data := models.GetTextMsgData(userID, msgID, message)
 	// 获取与用户建立的socket client，如果不为空，则是当前机器，否则需要通过redis查找对应的服务，并通过rpc发生消息
-	client := GetUserClient(appID, roomID, userID)
+	client := GetUserClient(roomID, userID)
 
 	if client != nil {
 		// 在本机发送
-		sendResults, err = SendUserMessageLocal(appID, roomID, userID, data)
+		sendResults, err = SendUserMessageLocal(roomID, userID, data)
 		if err != nil {
-			fmt.Println("给用户发送消息", appID, userID, err)
+			fmt.Println("给用户发送消息", roomID, userID, err)
 		}
 		return
 	}
 
-	key := GetUserKey(appID, roomID, userID)
+	key := GetUserKey(roomID, userID)
 	info, err := cache.GetUserOnlineInfo(key)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
@@ -54,7 +59,7 @@ func SendUserMessage(appID, roomID uint32, userID string, msgID, message string)
 		return false, nil
 	}
 	// server := models.NewServer(info.AccIP, info.AccPort)
-	// msg, err := grpcclient.SendMsg(server, msgID, appID, userID, models.MessageCmdMsg, models.MessageCmdMsg, message)
+	// msg, err := grpcclient.SendMsg(server, msgID, userID, models.MessageCmdMsg, models.MessageCmdMsg, message)
 	// if err != nil {
 	// 	fmt.Println("给用户发送消息失败", key, err)
 	// 	return false, err
@@ -66,25 +71,22 @@ func SendUserMessage(appID, roomID uint32, userID string, msgID, message string)
 }
 
 // SendUserMessageLocal 给本机用户发送消息
-func SendUserMessageLocal(appID, roomID uint32, userID string, data string) (sendResults bool, err error) {
-	client := GetUserClient(appID, roomID, userID)
+func SendUserMessageLocal(roomID uint32, userID string, data string) (sendResults bool, err error) {
+	client := GetUserClient(roomID, userID)
 	if client == nil {
 		err = errors.New("用户不在线")
-
 		return
 	}
 
 	// 发送消息
 	client.SendMsg([]byte(data))
 	sendResults = true
-
 	return
 }
 
 // SendUserMessageAll 发送消息
 func SendUserMessageAll(appID, roomID uint32, userID, msgID, cmd, message string) (sendResults bool, err error) {
 	sendResults = true
-
 	currentTime := uint64(time.Now().Unix())
 
 	servers, err := cache.GetServerNodeAll(currentTime)
@@ -94,7 +96,9 @@ func SendUserMessageAll(appID, roomID uint32, userID, msgID, cmd, message string
 	}
 
 	logrus.WithFields(logrus.Fields{
+		"servers": servers,
 		"appID":   appID,
+		"roomID":  roomID,
 		"userID":  userID,
 		"message": message,
 		"cmd":     cmd,
@@ -102,7 +106,7 @@ func SendUserMessageAll(appID, roomID uint32, userID, msgID, cmd, message string
 	}).Info("SendUserMessageAll")
 
 	data := models.GetMsgData(userID, msgID, cmd, message)
-	cache.ZSetMessage(appID, data)
+	cache.ZSetMessage(roomID, data)
 
 	for _, sv := range servers {
 		if sv.IP == serverIP && sv.Port == sv.Port {
@@ -117,12 +121,43 @@ func SendUserMessageAll(appID, roomID uint32, userID, msgID, cmd, message string
 func AllSendMessages(appID, roomID uint32, userID string, data string) {
 	logrus.WithFields(logrus.Fields{
 		"appID":  appID,
+		"roomID": roomID,
 		"userID": userID,
 		"data":   data,
 	}).Info("全员广播")
 
 	// 获取userId对应的client，用于过滤
-	ignoreClient := clientManager.GetUserClient(appID, roomID, userID)
-	// 发生数据给所有人
-	clientManager.sendAppIDAll([]byte(data), appID, ignoreClient)
+	ignoreClient := clientManager.GetUserClient(appID, userID)
+	// 发送数据给房间所有人
+	clientManager.sendRoomIDAll([]byte(data), roomID, ignoreClient)
+}
+
+// EnterRoom 进入房间
+func EnterRoom(appID, roomID uint32, userID string) {
+
+	client := clientManager.GetUserClient(appID, userID)
+
+	client.UserOnline.RoomID = roomID
+
+	logrus.WithFields(logrus.Fields{
+		"AppId":  appID,
+		"UserId": userID,
+		"RoomID": roomID,
+	}).Info("webSocket_request 进入房间接口")
+
+	clientManager.EnterRoom <- client
+}
+
+// ExitRoom 进入房间
+func ExitRoom(appID uint32, userID string) {
+
+	client := clientManager.GetUserClient(appID, userID)
+
+	logrus.WithFields(logrus.Fields{
+		"AppId":  appID,
+		"UserId": userID,
+		"client": client.UserOnline.RoomID,
+	}).Info("webSocket_request 离开房间接口")
+
+	clientManager.ExitRoom <- client
 }

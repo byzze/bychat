@@ -52,6 +52,7 @@ func IsLocal(server *models.ServerNode) (isLocal bool) {
 	return
 }
 
+// InRoomIDs 校验是否在房间id
 func InRoomIDs(roomID uint32) (inRoomID bool) {
 	for _, value := range roomIDs {
 		if value == roomID {
@@ -68,7 +69,7 @@ func GetDefaultRoomID() (roomID uint32) {
 	return
 }
 
-// GetDefaultRoomID 获取df id
+// GetDefaultAppID 获取df id
 func GetDefaultAppID() (appID uint32) {
 	appID = defaultAppID
 	return

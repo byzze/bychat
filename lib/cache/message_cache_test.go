@@ -2,7 +2,6 @@ package cache
 
 import (
 	"bychat/lib/redislib"
-	"fmt"
 	"testing"
 
 	"github.com/sirupsen/logrus"
@@ -15,7 +14,7 @@ func InitRedis() {
 
 	err := viper.ReadInConfig()
 	if err != nil {
-		panic(fmt.Errorf("Fatal error config file: %s \n", err))
+		logrus.Panic("Fatal error config file: %s \n", err)
 	}
 	redislib.ExampleNewClient()
 }
