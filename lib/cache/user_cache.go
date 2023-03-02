@@ -22,6 +22,9 @@ const (
 	userOnlineCacheTime = 24 * 60 * 60
 )
 
+var UserMap = make(map[string]*models.UserOnline)
+var UserClientMap = make(map[string]*models.Client)
+
 /*********************  查询用户是否在线  ************************/
 func getUserOnlineKey(userKey string) (key string) {
 	key = fmt.Sprintf("%s%s", userOnlinePrefix, userKey)
@@ -63,7 +66,6 @@ func GetUserOnlineInfo(userKey string) (userOnline *models.UserOnline, err error
 		"userKey":       userKey,
 		"LoginTime":     userOnline.LoginTime,
 		"HeartbeatTime": userOnline.HeartbeatTime,
-		"AccIp":         userOnline.AccIP,
 		"IsLogoff":      userOnline.IsLogoff,
 	}).Info("获取用户在线数据")
 	return

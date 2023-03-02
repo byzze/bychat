@@ -107,7 +107,7 @@ func wsPage(w http.ResponseWriter, req *http.Request) {
 	logrus.Info("webSocket 建立连接:", conn.RemoteAddr().String())
 
 	currentTime := uint64(time.Now().Unix())
-	client := NewClient(conn.RemoteAddr().String(), conn, currentTime)
+	client := NewClient(0, conn.RemoteAddr().String(), "", "", "", "", conn, currentTime)
 
 	go client.read()
 	go client.write()

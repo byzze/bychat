@@ -18,7 +18,7 @@ func GetRoomUserList(appID, roomID uint32) (userList []string) {
 
 	key := roomID
 	for _, v := range clientManager.Rooms[key] {
-		userList = append(userList, v.UserID)
+		userList = append(userList, v.ID)
 	}
 	return
 }
@@ -127,7 +127,7 @@ func AllSendMessages(appID, roomID uint32, userID string, data string) {
 	}).Info("全员广播")
 
 	// 获取userId对应的client，用于过滤
-	ignoreClient := clientManager.GetUserClient(appID, userID)
+	ignoreClient := cache.UserClientMap[userID]
 	// 发送数据给房间所有人
 	clientManager.sendRoomIDAll([]byte(data), roomID, ignoreClient)
 }
@@ -135,29 +135,20 @@ func AllSendMessages(appID, roomID uint32, userID string, data string) {
 // EnterRoom 进入房间
 func EnterRoom(appID, roomID uint32, userID string) {
 
-	client := clientManager.GetUserClient(appID, userID)
-
-	client.UserOnline.RoomID = roomID
-
 	logrus.WithFields(logrus.Fields{
 		"AppId":  appID,
 		"UserId": userID,
 		"RoomID": roomID,
 	}).Info("webSocket_request 进入房间接口")
 
-	clientManager.EnterRoom <- client
 }
 
 // ExitRoom 进入房间
 func ExitRoom(appID uint32, userID string) {
 
-	client := clientManager.GetUserClient(appID, userID)
-
 	logrus.WithFields(logrus.Fields{
 		"AppId":  appID,
 		"UserId": userID,
-		"client": client.UserOnline.RoomID,
 	}).Info("webSocket_request 离开房间接口")
 
-	clientManager.ExitRoom <- client
 }
