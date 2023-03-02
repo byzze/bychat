@@ -4,6 +4,7 @@ import (
 	"bychat/internal/helper"
 	"bychat/internal/models"
 	"bychat/lib/cache"
+	"fmt"
 	"sync"
 	"time"
 
@@ -12,15 +13,13 @@ import (
 
 // ClientManager 连接管理
 type ClientManager struct {
-	Clients     map[*Client]bool                // 全部的连接
-	ClientsLock sync.RWMutex                    // 读写锁
-	Users       map[string]*Client              // 登录的用户 // appID+uuid
-	UserLock    sync.RWMutex                    // 读写锁
-	Rooms       map[uint32][]*models.UserOnline // appID+roomID
-	RoomLock    sync.RWMutex                    // 读写锁
-	Register    chan *Client                    // 连接连接处理
-	Unregister  chan *Client                    // 断开连接处理程序
-	Broadcast   chan []byte                     // 广播 向全部成员发送数据
+	Clients     map[*Client]bool   // 全部的连接
+	ClientsLock sync.RWMutex       // 读写锁
+	Users       map[string]*Client // 登录的用户 // appID+uuid
+	UserLock    sync.RWMutex       // 读写锁
+	Register    chan *Client       // 连接连接处理
+	Unregister  chan *Client       // 断开连接处理程序
+	Broadcast   chan []byte        // 广播 向全部成员发送数据
 }
 
 // NewClientManager 管理client
@@ -28,7 +27,6 @@ func NewClientManager() (clientManager *ClientManager) {
 	clientManager = &ClientManager{
 		Clients:    make(map[*Client]bool),
 		Users:      make(map[string]*Client),
-		Rooms:      make(map[uint32][]*models.UserOnline),
 		Register:   make(chan *Client, 1000),
 		Unregister: make(chan *Client, 1000),
 		Broadcast:  make(chan []byte, 1000),
@@ -100,23 +98,32 @@ func (manager *ClientManager) DelClients(client *Client) {
 	}
 }
 
+// AddUserClients 添加客户端
+func (manager *ClientManager) AddUserClients(client *Client) {
+	manager.UserLock.Lock()
+	defer manager.UserLock.Unlock()
+
+	manager.Users[client.GetKey()] = client
+}
+
+// DelUserClients 添加客户端
+func (manager *ClientManager) DelUserClients(client *Client) {
+	manager.UserLock.Lock()
+	defer manager.UserLock.Unlock()
+
+	if _, ok := manager.Users[client.GetKey()]; ok {
+		delete(manager.Users, client.GetKey())
+	}
+}
+
 // GetUserClient 获取用户的连接
 func (manager *ClientManager) GetUserClient(appID uint32, userID string) (client *Client) {
 	manager.UserLock.RLock()
 	defer manager.UserLock.RUnlock()
 
-	userKey := userID
-	if value, ok := manager.Users[userKey]; ok {
+	key := fmt.Sprintf("%d_%s", appID, userID)
+	if value, ok := manager.Users[key]; ok {
 		client = value
-	}
-	return
-}
-
-// GetRoomUsersLen 获取用户
-func (manager *ClientManager) GetRoomUsersLen() (res map[uint32]int) {
-	res = make(map[uint32]int)
-	for k, v := range manager.Rooms {
-		res[k] = len(v)
 	}
 	return
 }
@@ -282,10 +289,9 @@ func (manager *ClientManager) start() {
 func GetManagerInfo(isDebug string) (managerInfo map[string]interface{}) {
 	managerInfo = make(map[string]interface{})
 
-	managerInfo["clientsLen"] = clientManager.GetClientsLen()     // 客户端连接数
-	managerInfo["usersLen"] = clientManager.GetUsersLen()         // 登录用户数
-	managerInfo["roomusersLen"] = clientManager.GetRoomUsersLen() // 房间用户数
-	managerInfo["chanRegisterLen"] = len(clientManager.Register)  // 未处理连接事件数
+	managerInfo["clientsLen"] = clientManager.GetClientsLen()    // 客户端连接数
+	managerInfo["usersLen"] = clientManager.GetUsersLen()        // 登录用户数
+	managerInfo["chanRegisterLen"] = len(clientManager.Register) // 未处理连接事件数
 	// managerInfo["chanLoginLen"] = len(clientManager.Login)           // 未处理登录事件数
 	managerInfo["chanUnregisterLen"] = len(clientManager.Unregister) // 未处理退出登录事件数
 	managerInfo["chanBroadcastLen"] = len(clientManager.Broadcast)   // 未处理广播事件数

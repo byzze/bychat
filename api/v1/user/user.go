@@ -7,6 +7,7 @@ import (
 	"bychat/internal/servers/websocket"
 	"bychat/lib/cache"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
@@ -23,26 +24,19 @@ type Param struct {
 
 func Login(ctx *gin.Context) {
 	data := make(map[string]interface{})
-	userID := ctx.PostForm("userID")
-	appID := ctx.PostForm("appID")
+	id := ctx.PostForm("id")
 
-	key := appID + userID
+	websocket.Login(0, id)
 	// 放入缓存 map 后续可以redis
-	if !cache.IsLogin(key) {
-		base.Response(ctx, common.OK, "已经登录", data)
-		return
-	}
-	cache.SetUserMap(key)
+	data["token"] = time.Nanosecond
 	base.Response(ctx, common.OK, "登陆成功", data)
 }
 
 func LogOut(ctx *gin.Context) {
 	data := make(map[string]interface{})
-	userID := ctx.PostForm("userID")
-	appID := ctx.PostForm("appID")
+	id := ctx.PostForm("id")
 
-	key := appID + userID
-	cache.DelUserMap(key)
+	websocket.LogOut(0, id)
 
 	base.Response(ctx, common.OK, "退出成功", data)
 }

@@ -16,16 +16,16 @@ func GetRoomUserList(appID, roomID uint32) (userList []string) {
 		"roomID": roomID,
 	}).Info("获取全部用户")
 
-	key := roomID
-	for _, v := range clientManager.Rooms[key] {
-		userList = append(userList, v.ID)
-	}
+	// key := roomID
+	// for _, v := range cache.Rooms[key] {
+	// 	userList = append(userList, v.ID)
+	// }
 	return
 }
 
 // GetUserClient 获取用户所在的连接
-func GetUserClient(roomID uint32, userID string) (client *Client) {
-	client = clientManager.GetUserClient(roomID, userID)
+func GetUserClient(appID uint32, userID string) (client *Client) {
+	client = clientManager.GetUserClient(appID, userID)
 	return
 }
 
@@ -45,7 +45,7 @@ func SendUserMessage(roomID uint32, userID string, msgID, message string) (sendR
 		return
 	}
 
-	key := GetUserKey(roomID, userID)
+	key := userID
 	info, err := cache.GetUserOnlineInfo(key)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
@@ -127,14 +127,13 @@ func AllSendMessages(appID, roomID uint32, userID string, data string) {
 	}).Info("全员广播")
 
 	// 获取userId对应的client，用于过滤
-	ignoreClient := cache.UserClientMap[userID]
+	ignoreClient := clientManager.Users[userID]
 	// 发送数据给房间所有人
 	clientManager.sendRoomIDAll([]byte(data), roomID, ignoreClient)
 }
 
 // EnterRoom 进入房间
 func EnterRoom(appID, roomID uint32, userID string) {
-
 	logrus.WithFields(logrus.Fields{
 		"AppId":  appID,
 		"UserId": userID,
@@ -145,10 +144,39 @@ func EnterRoom(appID, roomID uint32, userID string) {
 
 // ExitRoom 进入房间
 func ExitRoom(appID uint32, userID string) {
-
 	logrus.WithFields(logrus.Fields{
 		"AppId":  appID,
 		"UserId": userID,
 	}).Info("webSocket_request 离开房间接口")
 
+}
+
+// LogOut 退出
+func LogOut(appID uint32, userID string) {
+	logrus.WithFields(logrus.Fields{
+		"AppId":  appID,
+		"UserId": userID,
+	}).Info("webSocket_request 退出")
+	delete(cache.UserMap, userID)
+
+	c := GetUserClient(appID, userID)
+	clientManager.Unregister <- c
+}
+
+// Login 登录
+func Login(appID uint32, userID string) {
+	logrus.WithFields(logrus.Fields{
+		"AppId":  appID,
+		"UserId": userID,
+	}).Info("webSocket_request 登录")
+
+	var user = models.UserOnline{
+		ID:            userID,
+		LoginTime:     0,
+		HeartbeatTime: 0,
+		LogOutTime:    0,
+		DeviceInfo:    "",
+		IsLogoff:      false,
+	}
+	cache.UserMap[userID] = &user
 }

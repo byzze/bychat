@@ -11,6 +11,22 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+func Open(client *Client, seq string, message []byte) (code uint32, msg string, data interface{}) {
+	code = common.OK
+	// currentTime := uint64(time.Now().Unix())
+
+	var request = &models.OpenRequest{}
+	err := json.Unmarshal(message, request)
+	if err != nil {
+		code = common.ParameterIllegal
+		logrus.WithField("err", err.Error()).Error("Heartbeat")
+		return
+	}
+
+	clientManager.Register <- client
+	return
+}
+
 // Heartbeat 心跳
 func Heartbeat(c *Client, seq string, message []byte) (code uint32, msg string, data interface{}) {
 	code = common.OK

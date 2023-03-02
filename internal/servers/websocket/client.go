@@ -2,6 +2,7 @@ package websocket
 
 import (
 	"bychat/internal/models"
+	"fmt"
 	"runtime/debug"
 
 	"github.com/gorilla/websocket"
@@ -25,6 +26,11 @@ func NewClient(appID uint32, accIP, accPort, ClientIP, ClientPort, addr string, 
 		HeartbeatTime: firstTime,
 	}
 	return
+}
+
+func (client *Client) GetKey() string {
+	key := fmt.Sprintf("%d_%s", client.AppID, client.UserID)
+	return key
 }
 
 // 读取客户端数据

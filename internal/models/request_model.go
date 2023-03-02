@@ -9,8 +9,8 @@ type Request struct {
 	Data interface{} `json:"data,omitempty"` // 数据 json
 }
 
-// LoginRequest 登录请求数据
-type LoginRequest struct {
+// OpenRequest 登录请求数据
+type OpenRequest struct {
 	ServiceToken string `json:"serviceToken"` // 验证用户是否登录
 	AppID        uint32 `json:"appID,omitempty"`
 	RoomID       uint32 `json:"roomID,omitempty"`

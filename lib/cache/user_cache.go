@@ -23,7 +23,6 @@ const (
 )
 
 var UserMap = make(map[string]*models.UserOnline)
-var UserClientMap = make(map[string]*models.Client)
 
 /*********************  查询用户是否在线  ************************/
 func getUserOnlineKey(userKey string) (key string) {
