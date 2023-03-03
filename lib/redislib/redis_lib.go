@@ -17,8 +17,8 @@ var (
 	client *redis.Client
 )
 
-// ExampleNewClient 初始链接
-func ExampleNewClient() {
+// InitRedlisClient 初始链接
+func InitRedlisClient() {
 	// 初始redis链接
 	client = redis.NewClient(&redis.Options{
 		Addr:         viper.GetString("redis.addr"),

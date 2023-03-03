@@ -15,6 +15,8 @@ func InitWeb(router *gin.Engine) {
 	// 用户组
 	userRouter := router.Group("/user")
 	{
+		userRouter.POST("/login", user.Login)
+		userRouter.POST("/logout", user.LogOut)
 		userRouter.GET("/list", user.GetRoomUserList)
 		userRouter.POST("/enter", user.EnterRoom)
 		userRouter.POST("/exit", user.ExitRoom)

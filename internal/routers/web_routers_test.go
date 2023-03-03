@@ -20,7 +20,7 @@ func InitRedis() {
 	if err != nil {
 		logrus.Panic(err)
 	}
-	redislib.ExampleNewClient()
+	redislib.InitRedlisClient()
 }
 
 func TestRegisterRouter(t *testing.T) {

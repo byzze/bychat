@@ -19,7 +19,7 @@ func Open(client *Client, seq string, message []byte) (code uint32, msg string, 
 	err := json.Unmarshal(message, request)
 	if err != nil {
 		code = common.ParameterIllegal
-		logrus.WithField("err", err.Error()).Error("Heartbeat")
+		logrus.WithField("err", err.Error()).Error("Open")
 		return
 	}
 

@@ -16,7 +16,7 @@ func InitRedis() {
 	if err != nil {
 		logrus.Panic("Fatal error config file: %s \n", err)
 	}
-	redislib.ExampleNewClient()
+	redislib.InitRedlisClient()
 }
 func TestZSetMessage(t *testing.T) {
 	t.Run("one", func(t *testing.T) {

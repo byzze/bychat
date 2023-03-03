@@ -4,9 +4,7 @@ import (
 	"bychat/config"
 	"bychat/internal/common"
 	"bychat/internal/routers"
-	"bychat/internal/servers/task"
 	"bychat/internal/servers/websocket"
-	"bychat/lib/redislib"
 	"bytes"
 	"io/ioutil"
 	"time"
@@ -27,11 +25,12 @@ func main() {
 	config.InitConfig()
 	common.SetOutPutFile(logrus.TraceLevel)
 
-	redislib.ExampleNewClient()
+	// redislib.InitRedlisClient()
 
 	go websocket.StartWebSocket()
-	task.ServerNodeInit()
-	task.CleanConnctionInit()
+
+	// task.ServerNodeInit()
+	// task.CleanConnctionInit()
 
 	r.Run()
 }

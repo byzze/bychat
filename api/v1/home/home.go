@@ -22,8 +22,8 @@ func Index(c *gin.Context) {
 	logrus.Info("http_request 聊天首页", roomID)
 
 	data := gin.H{
-		"title":        "聊天首页",
-		"roomID":       roomID,
+		"title": "聊天首页",
+		// "roomID":       roomID,
 		"appID":        websocket.GetDefaultAppID(),
 		"httpUrl":      viper.GetString("app.httpUrl"),
 		"webSocketUrl": viper.GetString("app.webSocketUrl"),

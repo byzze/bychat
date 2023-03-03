@@ -27,7 +27,7 @@ func main() {
 	config.InitConfig()
 	common.SetOutPutFile(logrus.TraceLevel)
 
-	redislib.ExampleNewClient()
+	redislib.InitRedlisClient()
 
 	go websocket.StartWebSocket()
 	task.ServerNodeInit()

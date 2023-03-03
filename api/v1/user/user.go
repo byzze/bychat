@@ -6,6 +6,7 @@ import (
 	"bychat/internal/models"
 	"bychat/internal/servers/websocket"
 	"bychat/lib/cache"
+	"fmt"
 	"strconv"
 	"time"
 
@@ -30,7 +31,7 @@ func Login(ctx *gin.Context) {
 
 	websocket.Login(0, id, name)
 	// 放入缓存 map 后续可以redis
-	data["token"] = time.Nanosecond
+	data["token"] = fmt.Sprintf("%d", time.Now().Unix())
 	base.Response(ctx, common.OK, "登陆成功", data)
 }
 
