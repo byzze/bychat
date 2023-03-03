@@ -164,7 +164,7 @@ func LogOut(appID uint32, userID string) {
 }
 
 // Login 登录
-func Login(appID uint32, userID string) {
+func Login(appID uint32, userID, userName string) {
 	logrus.WithFields(logrus.Fields{
 		"AppId":  appID,
 		"UserId": userID,

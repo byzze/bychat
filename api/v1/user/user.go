@@ -22,16 +22,19 @@ type Param struct {
 	Limit  int64  `form:"limit"`
 }
 
+// Login 登录
 func Login(ctx *gin.Context) {
 	data := make(map[string]interface{})
 	id := ctx.PostForm("id")
+	name := ctx.PostForm("name")
 
-	websocket.Login(0, id)
+	websocket.Login(0, id, name)
 	// 放入缓存 map 后续可以redis
 	data["token"] = time.Nanosecond
 	base.Response(ctx, common.OK, "登陆成功", data)
 }
 
+// LogOut 退出
 func LogOut(ctx *gin.Context) {
 	data := make(map[string]interface{})
 	id := ctx.PostForm("id")

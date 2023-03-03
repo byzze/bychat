@@ -11,10 +11,9 @@ type Request struct {
 
 // OpenRequest 登录请求数据
 type OpenRequest struct {
-	ServiceToken string `json:"serviceToken"` // 验证用户是否登录
-	AppID        uint32 `json:"appID,omitempty"`
-	RoomID       uint32 `json:"roomID,omitempty"`
-	UserID       string `json:"userID,omitempty"`
+	Token  string `json:"token"` // 验证用户是否登录
+	AppID  uint32 `json:"appID,omitempty"`
+	UserID string `json:"userID,omitempty"`
 }
 
 // HeartBeatRequest 心跳请求数据
