@@ -13,18 +13,18 @@ type Request struct {
 type OpenRequest struct {
 	Token  string `json:"token"` // 验证用户是否登录
 	AppID  uint32 `json:"appID,omitempty"`
-	UserID string `json:"userID,omitempty"`
+	UserID uint32 `json:"userID,omitempty"`
 }
 
 // HeartBeatRequest 心跳请求数据
 type HeartBeatRequest struct {
-	UserID string `json:"userID,omitempty"`
+	UserID uint32 `json:"userID,omitempty"`
 }
 
 // MsgRequest 消息请求
 type MsgRequest struct {
 	AppID   uint32 `json:"appID"`
-	UserID  string `jsong:"userID"`
+	UserID  uint32 `jsong:"userID"`
 	MsgID   string `json:"msgID"`
 	Message string `json:"message"`
 	Cmd     string `json:"cmd"`
@@ -34,5 +34,5 @@ type MsgRequest struct {
 type EnterRoomRequest struct {
 	AppID  uint32 `json:"appID,omitempty"`
 	RoomID uint32 `json:"roomID,omitempty"`
-	UserID string `json:"userID,omitempty"`
+	UserID uint32 `json:"userID,omitempty"`
 }

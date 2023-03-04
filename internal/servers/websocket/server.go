@@ -11,9 +11,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func Open(client *Client, seq string, message []byte) (code uint32, msg string, data interface{}) {
+func BindUser(client *Client, seq string, message []byte) (code uint32, msg string, data interface{}) {
 	code = common.OK
-	// currentTime := uint64(time.Now().Unix())
 
 	var request = &models.OpenRequest{}
 	err := json.Unmarshal(message, request)
@@ -22,8 +21,15 @@ func Open(client *Client, seq string, message []byte) (code uint32, msg string, 
 		logrus.WithField("err", err.Error()).Error("Open")
 		return
 	}
+	userOnline, err := cache.GetUserOnlineInfo(request.UserID)
+	if err != nil {
+		code = common.ParameterIllegal
+		logrus.WithField("err", err.Error()).Error("Open")
+		return
+	}
+	client.Login(request.AppID, userOnline)
 
-	clientManager.Register <- client
+	clientManager.BindUser <- client
 	return
 }
 
@@ -54,7 +60,7 @@ func Heartbeat(c *Client, seq string, message []byte) (code uint32, msg string, 
 		return
 	}
 
-	userOnline, err := cache.GetUserOnlineInfo("")
+	userOnline, err := cache.GetUserOnlineInfo(request.UserID)
 	if err != nil {
 		if err == redis.Nil {
 			code = common.NotLoggedIn
@@ -75,7 +81,7 @@ func Heartbeat(c *Client, seq string, message []byte) (code uint32, msg string, 
 
 	c.Heartbeat(currentTime)
 	userOnline.Heartbeat(currentTime)
-	err = cache.SetUserOnlineInfo("", userOnline)
+	err = cache.SetUserOnlineInfo(request.UserID, userOnline)
 	if err != nil {
 		code = common.ServerError
 		logrus.WithFields(logrus.Fields{

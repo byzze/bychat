@@ -22,30 +22,28 @@ const (
 	userOnlineCacheTime = 24 * 60 * 60
 )
 
-var UserMap = make(map[string]*models.UserOnline)
-
 /*********************  查询用户是否在线  ************************/
-func getUserOnlineKey(userKey string) (key string) {
-	key = fmt.Sprintf("%s%s", userOnlinePrefix, userKey)
+func getUserOnlineKey(userID uint32) (key string) {
+	key = fmt.Sprintf("%s%d", userOnlinePrefix, userID)
 	return
 }
 
 // GetUserOnlineInfo 用户在线信息
-func GetUserOnlineInfo(userKey string) (userOnline *models.UserOnline, err error) {
+func GetUserOnlineInfo(userID uint32) (userOnline *models.UserOnline, err error) {
 	redisClient := redislib.GetClient()
 
-	key := getUserOnlineKey(userKey)
+	key := getUserOnlineKey(userID)
 	data, err := redisClient.Get(key).Bytes()
 	if err != nil {
 		if err == redis.Nil {
 			logrus.WithFields(logrus.Fields{
-				"userKey": userKey,
+				"userKey": userID,
 				"err":     err,
 			}).Info("GetUserOnlineInfo")
 			return
 		}
 		logrus.WithFields(logrus.Fields{
-			"userKey": userKey,
+			"userKey": userID,
 			"err":     err,
 		}).Error("GetUserOnlineInfo")
 		return
@@ -55,14 +53,14 @@ func GetUserOnlineInfo(userKey string) (userOnline *models.UserOnline, err error
 	err = json.Unmarshal(data, userOnline)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
-			"userKey": userKey,
+			"userKey": userID,
 			"err":     err,
 		}).Error("获取用户在线数据 json Unmarshal")
 		return
 	}
 
 	logrus.WithFields(logrus.Fields{
-		"userKey":       userKey,
+		"userKey":       userID,
 		"LoginTime":     userOnline.LoginTime,
 		"HeartbeatTime": userOnline.HeartbeatTime,
 		"IsLogoff":      userOnline.IsLogoff,
@@ -71,7 +69,7 @@ func GetUserOnlineInfo(userKey string) (userOnline *models.UserOnline, err error
 }
 
 // SetUserOnlineInfo 设置用户在线数据
-func SetUserOnlineInfo(userKey string, userOnline *models.UserOnline) (err error) {
+func SetUserOnlineInfo(userKey uint32, userOnline *models.UserOnline) (err error) {
 	redisClient := redislib.GetClient()
 	key := getUserOnlineKey(userKey)
 

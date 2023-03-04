@@ -88,6 +88,6 @@ func ProcessData(c *Client, message []byte) {
 	logrus.WithFields(logrus.Fields{
 		"cmd":      cmd,
 		"code":     code,
-		"headByte": headByte,
+		"headByte": string(headByte),
 	}).Info("acc_response send")
 }

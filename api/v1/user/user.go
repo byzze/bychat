@@ -17,8 +17,8 @@ import (
 // Param 参数
 type Param struct {
 	AppID  uint32 `form:"appID" json:"appID"  binding:"-"`
-	RoomID uint32 `form:"roomID" json:"roomID"  binding:"required"`
-	UserID string `form:"userID" json:"userID" `
+	RoomID uint32 `form:"roomID" json:"roomID"  binding:"-"`
+	UserID uint32 `form:"userID" json:"userID" `
 	Start  int64  `form:"start"`
 	Limit  int64  `form:"limit"`
 }
@@ -26,10 +26,20 @@ type Param struct {
 // Login 登录
 func Login(ctx *gin.Context) {
 	data := make(map[string]interface{})
-	id := ctx.PostForm("id")
-	name := ctx.PostForm("name")
+	idStr := ctx.PostForm("id")
+	nickname := ctx.PostForm("nickname")
 
-	websocket.Login(0, id, name)
+	id, _ := strconv.ParseInt(idStr, 10, 64)
+	err := websocket.Login(0, uint32(id), nickname)
+	if err != nil {
+		logrus.Error("websocket Login", err)
+		base.Response(ctx, common.OperationFailure, "", data)
+		return
+	}
+	logrus.WithFields(logrus.Fields{
+		"id":   id,
+		"name": nickname,
+	}).Info("Login Info")
 	// 放入缓存 map 后续可以redis
 	data["token"] = fmt.Sprintf("%d", time.Now().Unix())
 	base.Response(ctx, common.OK, "登陆成功", data)
@@ -38,9 +48,11 @@ func Login(ctx *gin.Context) {
 // LogOut 退出
 func LogOut(ctx *gin.Context) {
 	data := make(map[string]interface{})
-	id := ctx.PostForm("id")
+	idStr := ctx.PostForm("id")
 
-	websocket.LogOut(0, id)
+	id, _ := strconv.ParseInt(idStr, 10, 64)
+
+	websocket.LogOut(0, uint32(id))
 
 	base.Response(ctx, common.OK, "退出成功", data)
 }
@@ -55,7 +67,7 @@ func GetRoomUserList(ctx *gin.Context) {
 	appID := websocket.GetDefaultAppID()
 
 	if roomID == 0 {
-		base.Response(ctx, common.OK, "参数错误", data)
+		base.Response(ctx, common.ParameterIllegal, "参数错误", data)
 		return
 	}
 
@@ -76,16 +88,18 @@ func SendMessageAll(ctx *gin.Context) {
 	data := make(map[string]interface{})
 
 	roomIDStr := ctx.PostForm("roomID")
-	userID := ctx.PostForm("userID")
+	userIDStr := ctx.PostForm("userID")
 	msgID := ctx.PostForm("msgID")
 	message := ctx.PostForm("message")
 
 	roomIDUint64, _ := strconv.ParseInt(roomIDStr, 10, 32)
 	roomID := uint32(roomIDUint64)
+	userIDUint64, _ := strconv.ParseInt(userIDStr, 10, 32)
+	userID := uint32(userIDUint64)
 	appID := websocket.GetDefaultAppID()
 
 	if roomID == 0 {
-		base.Response(ctx, common.OK, "参数错误", data)
+		base.Response(ctx, common.ParameterIllegal, "参数错误", data)
 		return
 	}
 
@@ -118,19 +132,19 @@ func HistoryMessageList(ctx *gin.Context) {
 	data := make(map[string]interface{})
 
 	if err := ctx.ShouldBindQuery(&param); err != nil {
-		base.Response(ctx, common.OK, "", data)
+		base.Response(ctx, common.ParameterIllegal, "", data)
 		return
 	}
 
 	if param.RoomID == 0 {
-		base.Response(ctx, common.OK, "参数错误", data)
+		base.Response(ctx, common.ParameterIllegal, "参数错误", data)
 		return
 	}
 
 	res, err := cache.ZGetMessageByOffset(param.RoomID, param.Start, param.Limit)
 	if err != nil {
 		logrus.Error("ZGetMessageByOffset", err)
-		base.Response(ctx, common.OK, "", data)
+		base.Response(ctx, common.OperationFailure, "", data)
 		return
 	}
 
@@ -148,16 +162,21 @@ func EnterRoom(ctx *gin.Context) {
 	if err := ctx.Bind(&param); err != nil {
 		data["err"] = err.Error()
 		logrus.Error("EnterRoom Param Failed", err)
-		base.Response(ctx, common.OK, "参数错误", data)
+		base.Response(ctx, common.ParameterIllegal, "", data)
 		return
 	}
 
 	if param.RoomID == 0 {
-		base.Response(ctx, common.OK, "参数错误", data)
+		base.Response(ctx, common.ParameterIllegal, "", data)
 		return
 	}
 
-	websocket.EnterRoom(param.AppID, param.RoomID, param.UserID)
+	err := websocket.EnterRoom(param.AppID, param.RoomID, param.UserID)
+	if err != nil {
+		logrus.Error("EnterRoom Param Failed", err)
+		base.Response(ctx, common.ParameterIllegal, "", data)
+		return
+	}
 
 	base.Response(ctx, common.OK, "", data)
 }
@@ -170,11 +189,11 @@ func ExitRoom(ctx *gin.Context) {
 	if err := ctx.Bind(&param); err != nil {
 		data["err"] = err.Error()
 		logrus.Error("EnterRoom Param Failed", err)
-		base.Response(ctx, common.OK, "参数错误", data)
+		base.Response(ctx, common.ParameterIllegal, "参数错误", data)
 		return
 	}
 
-	websocket.ExitRoom(param.AppID, param.UserID)
+	websocket.ExitRoom(param.AppID, param.RoomID, param.UserID)
 
 	base.Response(ctx, common.OK, "", data)
 }

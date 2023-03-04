@@ -12,7 +12,8 @@ const (
 
 // UserOnline 用户在线状态
 type UserOnline struct {
-	ID            string `json:"id"`            // 用户Id
+	ID            uint32 `json:"id"`            // 用户id
+	NickName      string `json:"name"`          // 用户name
 	LoginTime     uint64 `json:"loginTime"`     // 用户上次登录时间
 	HeartbeatTime uint64 `json:"heartbeatTime"` // 用户上次心跳时间
 	LogOutTime    uint64 `json:"logOutTime"`    // 用户退出登录的时间
@@ -20,24 +21,24 @@ type UserOnline struct {
 	IsLogoff      bool   `json:"isLogoff"`      // 是否下线
 }
 
-type RoomInfo struct {
-	ID     string        `json:"id"`
-	Name   string        `json:"name"`
-	People []*UserOnline `json:"people"`
-}
+// type RoomInfo struct {
+// 	ID     string        `json:"id"`
+// 	Name   string        `json:"name"`
+// 	People []*UserOnline `json:"people"`
+// }
 
 /**********************  数据处理  *********************************/
 
 // UserLogin 用户登录
-func UserLogin(accIP, accPort string, appID uint32, userID string, addr string, loginTime uint64) (userOnline *UserOnline) {
-	userOnline = &UserOnline{
-		ID:            userID,
-		LoginTime:     loginTime,
-		HeartbeatTime: loginTime,
-		IsLogoff:      false,
-	}
-	return
-}
+// func UserLogin(accIP, accPort string, appID uint32, nickName string, addr string, loginTime uint64) (userOnline *UserOnline) {
+// 	userOnline = &UserOnline{
+// 		NickName:      nickName,
+// 		LoginTime:     loginTime,
+// 		HeartbeatTime: loginTime,
+// 		IsLogoff:      false,
+// 	}
+// 	return
+// }
 
 // Heartbeat 用户心跳
 func (u *UserOnline) Heartbeat(currentTime uint64) {

@@ -29,7 +29,7 @@ func NewClient(appID uint32, accIP, accPort, ClientIP, ClientPort, addr string, 
 }
 
 func (client *Client) GetKey() string {
-	key := fmt.Sprintf("%d_%s", client.AppID, client.UserID)
+	key := fmt.Sprintf("%d_%d", client.AppID, client.UserID)
 	return key
 }
 
@@ -113,6 +113,7 @@ func (client *Client) close() {
 func (client *Client) Login(appID uint32, userOnline *models.UserOnline) {
 	client.LoginTime = userOnline.LoginTime
 	client.AppID = appID
+	client.UserID = userOnline.ID
 	// 登录成功=心跳一次
 	client.Heartbeat(client.LoginTime)
 }
@@ -133,6 +134,9 @@ func (client *Client) IsHeartbeatTimeout(currentTime uint64) (timeout bool) {
 
 // IsLogin 是否登录了
 func (client *Client) IsLogin() (isLogin bool) {
+	if _, ok := clientManager.Users[client.GetKey()]; ok {
+		return true
+	}
 	// 用户登录了
 	return
 }

@@ -18,6 +18,7 @@ type ClientManager struct {
 	Users       map[string]*Client // 登录的用户 // appID+uuid
 	UserLock    sync.RWMutex       // 读写锁
 	Register    chan *Client       // 连接连接处理
+	BindUser    chan *Client       // 绑定用户信息
 	Unregister  chan *Client       // 断开连接处理程序
 	Broadcast   chan []byte        // 广播 向全部成员发送数据
 }
@@ -28,6 +29,7 @@ func NewClientManager() (clientManager *ClientManager) {
 		Clients:    make(map[*Client]bool),
 		Users:      make(map[string]*Client),
 		Register:   make(chan *Client, 1000),
+		BindUser:   make(chan *Client, 1000),
 		Unregister: make(chan *Client, 1000),
 		Broadcast:  make(chan []byte, 1000),
 	}
@@ -98,30 +100,12 @@ func (manager *ClientManager) DelClients(client *Client) {
 	}
 }
 
-// AddUserClients 添加客户端
-func (manager *ClientManager) AddUserClients(client *Client) {
-	manager.UserLock.Lock()
-	defer manager.UserLock.Unlock()
-
-	manager.Users[client.GetKey()] = client
-}
-
-// DelUserClients 添加客户端
-func (manager *ClientManager) DelUserClients(client *Client) {
-	manager.UserLock.Lock()
-	defer manager.UserLock.Unlock()
-
-	if _, ok := manager.Users[client.GetKey()]; ok {
-		delete(manager.Users, client.GetKey())
-	}
-}
-
 // GetUserClient 获取用户的连接
-func (manager *ClientManager) GetUserClient(appID uint32, userID string) (client *Client) {
+func (manager *ClientManager) GetUserClient(appID, userID uint32) (client *Client) {
 	manager.UserLock.RLock()
 	defer manager.UserLock.RUnlock()
 
-	key := fmt.Sprintf("%d_%s", appID, userID)
+	key := fmt.Sprintf("%d_%d", appID, userID)
 	if value, ok := manager.Users[key]; ok {
 		client = value
 	}
@@ -135,10 +119,11 @@ func (manager *ClientManager) GetUsersLen() (userLen int) {
 }
 
 // AddUsers 添加用户
-func (manager *ClientManager) AddUsers(key string, client *Client) {
+func (manager *ClientManager) AddUsers(client *Client) {
 	manager.UserLock.Lock()
 	defer manager.UserLock.Unlock()
 
+	key := client.GetKey()
 	manager.Users[key] = client
 }
 
@@ -147,7 +132,7 @@ func (manager *ClientManager) DelUsers(client *Client) (result bool) {
 	manager.UserLock.Lock()
 	defer manager.UserLock.Unlock()
 
-	key := client.UserID
+	key := client.GetKey()
 	if value, ok := manager.Users[key]; ok {
 		// 判断是否为相同的用户
 		if value.Addr != client.Addr {
@@ -172,24 +157,8 @@ func (manager *ClientManager) GetUserKeys() (userKeys []string) {
 	return
 }
 
-// GetRoomUserList 获取用户列表
-func (manager *ClientManager) GetRoomUserList(roomID uint32) (userList []string) {
-	userList = make([]string, 0)
-
-	manager.UserLock.RLock()
-	defer manager.UserLock.RUnlock()
-
-	for _, v := range manager.Users {
-		// todo
-		userList = append(userList, v.AccIP)
-	}
-
-	logrus.Info("GetUserList len:", len(manager.Users))
-	return
-}
-
 // GetUserClients 获取用户客户端信息
-func (manager *ClientManager) GetUserClients() (clients []*Client) {
+func (manager *ClientManager) GetUserClientList() (clients []*Client) {
 	clients = make([]*Client, 0)
 	manager.UserLock.RLock()
 	defer manager.UserLock.RUnlock()
@@ -202,18 +171,8 @@ func (manager *ClientManager) GetUserClients() (clients []*Client) {
 
 // 向全部成员(除了自己)发送数据
 func (manager *ClientManager) sendAll(message []byte, ignoreClient *Client) {
-	clients := manager.GetUserClients()
+	clients := manager.GetUserClientList()
 
-	for _, conn := range clients {
-		if conn != ignoreClient {
-			conn.SendMsg(message)
-		}
-	}
-}
-
-// 向全部成员(除了自己)发送数据
-func (manager *ClientManager) sendRoomIDAll(message []byte, roomID uint32, ignoreClient *Client) {
-	clients := manager.GetUserClients()
 	for _, conn := range clients {
 		if conn != ignoreClient {
 			conn.SendMsg(message)
@@ -225,6 +184,12 @@ func (manager *ClientManager) sendRoomIDAll(message []byte, roomID uint32, ignor
 func (manager *ClientManager) EventRegister(client *Client) {
 	manager.AddClients(client)
 	logrus.Info("EventRegister 用户建立连接:", client.Addr)
+}
+
+// EventRegister 用户建立连接事件
+func (manager *ClientManager) EvenBindUser(client *Client) {
+	manager.AddUsers(client)
+	logrus.Info("EvenBindUser 用户信息绑定:", client.Addr)
 }
 
 // EventUnregister 用户断开连接
@@ -250,7 +215,7 @@ func (manager *ClientManager) EventUnregister(client *Client) {
 
 	logrus.Info("EventUnregister 用户断开连接", client.Addr)
 
-	if client.UserID != "" {
+	if client.UserID != 0 {
 		orderID := helper.GetOrderIDTime()
 		// 更加用户ID查询房间id TODO
 		SendUserMessageAll(client.AppID, 0, client.UserID, orderID, models.MessageCmdExit, "用户已经离开~")
@@ -264,6 +229,10 @@ func (manager *ClientManager) start() {
 		case conn := <-manager.Register:
 			// 建立连接事件
 			manager.EventRegister(conn)
+
+		case conn := <-manager.BindUser:
+			// 绑定用户信息
+			manager.EvenBindUser(conn)
 
 		case conn := <-manager.Unregister:
 			// 断开连接事件
@@ -289,10 +258,9 @@ func (manager *ClientManager) start() {
 func GetManagerInfo(isDebug string) (managerInfo map[string]interface{}) {
 	managerInfo = make(map[string]interface{})
 
-	managerInfo["clientsLen"] = clientManager.GetClientsLen()    // 客户端连接数
-	managerInfo["usersLen"] = clientManager.GetUsersLen()        // 登录用户数
-	managerInfo["chanRegisterLen"] = len(clientManager.Register) // 未处理连接事件数
-	// managerInfo["chanLoginLen"] = len(clientManager.Login)           // 未处理登录事件数
+	managerInfo["clientsLen"] = clientManager.GetClientsLen()        // 客户端连接数
+	managerInfo["usersLen"] = clientManager.GetUsersLen()            // 登录用户数
+	managerInfo["chanRegisterLen"] = len(clientManager.Register)     // 未处理连接事件数
 	managerInfo["chanUnregisterLen"] = len(clientManager.Unregister) // 未处理退出登录事件数
 	managerInfo["chanBroadcastLen"] = len(clientManager.Broadcast)   // 未处理广播事件数
 
