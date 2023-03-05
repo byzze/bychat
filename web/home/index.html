@@ -526,6 +526,7 @@
 
 
             function getUserList() {
+                $(".personnel-list-ul").val("");
                 $.ajax({
                     type: "GET",
                     url: "http://{{ .httpUrl }}/user/list?roomID=" + roomID,

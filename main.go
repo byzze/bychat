@@ -30,8 +30,9 @@ func main() {
 	redislib.InitRedlisClient()
 
 	go websocket.StartWebSocket()
+
 	task.ServerNodeInit()
-	task.CleanConnctionInit()
+	// task.CleanConnctionInit()
 
 	r.Run()
 }

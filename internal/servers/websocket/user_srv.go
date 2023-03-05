@@ -1,6 +1,7 @@
 package websocket
 
 import (
+	"bychat/internal/helper"
 	"bychat/internal/models"
 	"bychat/lib/cache"
 	"errors"
@@ -116,9 +117,20 @@ func SendUserMessageAll(appID, roomID, userID uint32, msgID, cmd, message string
 	uo, err := cache.GetUserOnlineInfo(userID)
 	if err != nil {
 		logrus.Error("给全体用户发消息", err)
+		sendResults = false
 		return
 	}
-	data := models.GetMsgData(uo.NickName, msgID, cmd, message)
+	var data string
+
+	switch cmd {
+	case models.MessageCmdEnter:
+		data = models.GetTextMsgDataEnter(uo.NickName, msgID, message)
+	case models.MessageCmdExit:
+		data = models.GetTextMsgDataExit(uo.NickName, msgID, message)
+	default:
+		data = models.GetMsgData(uo.NickName, msgID, cmd, message)
+	}
+
 	cache.ZSetMessage(roomID, data)
 
 	for _, sv := range servers {
@@ -142,7 +154,7 @@ func AllSendMessages(appID, roomID, userID uint32, data string) {
 	// 获取userId对应的client，用于过滤
 	ignoreClient := clientManager.GetUserClient(appID, userID)
 	// 发送数据给房间所有人
-	clientManager.sendAll([]byte(data), ignoreClient)
+	clientManager.sendAll([]byte(data), roomID, ignoreClient)
 }
 
 // EnterRoom 进入房间
@@ -157,22 +169,41 @@ func EnterRoom(appID, roomID, userID uint32) error {
 		logrus.Error("EnterRoom Failed:", err)
 		return err
 	}
+	if uo == nil {
+		return errors.New("用户未登录")
+	}
+	seq := helper.GetOrderIDTime()
+	sendResults, err := SendUserMessageAll(appID, roomID, userID, seq, models.MessageCmdEnter, "哈喽~")
+	if err != nil {
+		logrus.Error("SendUserMessageAll Failed:", err)
+		return err
+	}
+	if !sendResults {
+		return nil
+	}
 	logrus.Info("EnterRoom uo:", uo.ID)
 	cache.SetRoomUser(roomID, uo)
 	return nil
 }
 
 // ExitRoom 离开房间
-func ExitRoom(appID, roomID, userID uint32) {
+func ExitRoom(appID, roomID, userID uint32) error {
 	logrus.WithFields(logrus.Fields{
 		"AppId":  appID,
 		"UserId": userID,
 	}).Info("webSocket_request 离开房间接口")
-	uo, err := cache.GetUserOnlineInfo(userID)
+	seq := helper.GetOrderIDTime()
+	sendResults, err := SendUserMessageAll(appID, roomID, userID, seq, models.MessageCmdExit, "退出~")
 	if err != nil {
-		logrus.Error("EnterRoom Failed:", err)
+		logrus.Error("SendUserMessageAll Failed:", err)
+		return err
 	}
-	cache.DelRoomUser(roomID, uo)
+	if !sendResults {
+		return nil
+	}
+
+	cache.DelRoomUser(roomID, userID)
+	return nil
 }
 
 // LogOut 退出

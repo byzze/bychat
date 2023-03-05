@@ -170,11 +170,18 @@ func (manager *ClientManager) GetUserClientList() (clients []*Client) {
 }
 
 // 向全部成员(除了自己)发送数据
-func (manager *ClientManager) sendAll(message []byte, ignoreClient *Client) {
+func (manager *ClientManager) sendAll(message []byte, roomID uint32, ignoreClient *Client) {
 	clients := manager.GetUserClientList()
 
+	userList := cache.GetRoomUser(roomID)
+	tmpMap := make(map[uint32]struct{})
+	for _, v := range userList {
+		tmpMap[v.ID] = struct{}{}
+	}
+
 	for _, conn := range clients {
-		if conn != ignoreClient {
+		_, ok := tmpMap[conn.UserID]
+		if conn != ignoreClient && ok {
 			conn.SendMsg(message)
 		}
 	}

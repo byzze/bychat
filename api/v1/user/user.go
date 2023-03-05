@@ -67,7 +67,7 @@ func GetRoomUserList(ctx *gin.Context) {
 	appID := websocket.GetDefaultAppID()
 
 	if roomID == 0 {
-		base.Response(ctx, common.ParameterIllegal, "参数错误", data)
+		base.Response(ctx, common.ParameterIllegal, "", data)
 		return
 	}
 
@@ -99,7 +99,7 @@ func SendMessageAll(ctx *gin.Context) {
 	appID := websocket.GetDefaultAppID()
 
 	if roomID == 0 {
-		base.Response(ctx, common.ParameterIllegal, "参数错误", data)
+		base.Response(ctx, common.ParameterIllegal, "", data)
 		return
 	}
 
@@ -137,7 +137,7 @@ func HistoryMessageList(ctx *gin.Context) {
 	}
 
 	if param.RoomID == 0 {
-		base.Response(ctx, common.ParameterIllegal, "参数错误", data)
+		base.Response(ctx, common.ParameterIllegal, "", data)
 		return
 	}
 
@@ -173,8 +173,8 @@ func EnterRoom(ctx *gin.Context) {
 
 	err := websocket.EnterRoom(param.AppID, param.RoomID, param.UserID)
 	if err != nil {
-		logrus.Error("EnterRoom Param Failed", err)
-		base.Response(ctx, common.ParameterIllegal, "", data)
+		logrus.Error("EnterRoom Failed", err)
+		base.Response(ctx, common.OperationFailure, "", data)
 		return
 	}
 
@@ -189,11 +189,16 @@ func ExitRoom(ctx *gin.Context) {
 	if err := ctx.Bind(&param); err != nil {
 		data["err"] = err.Error()
 		logrus.Error("EnterRoom Param Failed", err)
-		base.Response(ctx, common.ParameterIllegal, "参数错误", data)
+		base.Response(ctx, common.ParameterIllegal, "", data)
 		return
 	}
 
-	websocket.ExitRoom(param.AppID, param.RoomID, param.UserID)
+	err := websocket.ExitRoom(param.AppID, param.RoomID, param.UserID)
+	if err != nil {
+		logrus.Error("ExitRoom Failed", err)
+		base.Response(ctx, common.OperationFailure, "", data)
+		return
+	}
 
 	base.Response(ctx, common.OK, "", data)
 }
