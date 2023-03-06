@@ -34,7 +34,7 @@ func NewTextMsg(from string, Msg string) (message *Message) {
 }
 
 // getTextMsgData 获取文本消息
-func getTextMsgData(cmd, uuid, msgID, message string) string {
+func getTextMsgData(uuid, cmd, msgID, message string) string {
 	textMsg := NewTextMsg(uuid, message)
 	head := NewResponseHead(msgID, cmd, common.OK, "Ok", textMsg)
 
@@ -43,20 +43,20 @@ func getTextMsgData(cmd, uuid, msgID, message string) string {
 
 // GetMsgData 文本消息
 func GetMsgData(uuid, msgID, cmd, message string) string {
-	return getTextMsgData(cmd, uuid, msgID, message)
+	return getTextMsgData(uuid, cmd, msgID, message)
 }
 
 // GetTextMsgData 文本消息
 func GetTextMsgData(uuid, msgID, message string) string {
-	return getTextMsgData("msg", uuid, msgID, message)
+	return getTextMsgData(uuid, "msg", msgID, message)
 }
 
 // GetTextMsgDataEnter 用户进入消息
 func GetTextMsgDataEnter(uuid, msgID, message string) string {
-	return getTextMsgData("enter", uuid, msgID, message)
+	return getTextMsgData(uuid, "enter", msgID, message)
 }
 
 // GetTextMsgDataExit 用户退出消息
 func GetTextMsgDataExit(uuid, msgID, message string) string {
-	return getTextMsgData("exit", uuid, msgID, message)
+	return getTextMsgData(uuid, "exit", msgID, message)
 }
