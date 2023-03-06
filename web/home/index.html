@@ -524,9 +524,8 @@
                 }
             }
 
-
             function getUserList() {
-                $(".personnel-list-ul").val("");
+                $(".personnel-list-ul").html("");
                 $.ajax({
                     type: "GET",
                     url: "http://{{ .httpUrl }}/user/list?roomID=" + roomID,
@@ -568,7 +567,6 @@
                         console.log("message list====:" + res.data)
                         //i表示在data中的索引位置，n表示包含的信息的对象
                         $.each(res.data.data, function (i, n) {
-
                             data_array = JSON.parse(n);
                             data = data_array.response
                             console.log("message list----:", data_array.cmd)

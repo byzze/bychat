@@ -14,6 +14,7 @@ const (
 type UserOnline struct {
 	ID            uint32 `json:"id"`            // 用户id
 	NickName      string `json:"name"`          // 用户name
+	Addr          string `json:"addr"`          // 客户端地址
 	LoginTime     uint64 `json:"loginTime"`     // 用户上次登录时间
 	HeartbeatTime uint64 `json:"heartbeatTime"` // 用户上次心跳时间
 	LogOutTime    uint64 `json:"logOutTime"`    // 用户退出登录的时间

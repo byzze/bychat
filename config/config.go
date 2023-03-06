@@ -6,8 +6,8 @@ import (
 )
 
 // InitConfig 初始化配置
-func InitConfig() {
-	viper.SetConfigName("config/app")
+func InitConfig(cname string) {
+	viper.SetConfigName("config/" + cname)
 	viper.AddConfigPath(".")
 
 	err := viper.ReadInConfig()

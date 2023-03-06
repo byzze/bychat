@@ -4,18 +4,27 @@ import (
 	"bychat/config"
 	"bychat/internal/common"
 	"bychat/internal/routers"
+	"bychat/internal/servers/grpcserver"
 	"bychat/internal/servers/task"
 	"bychat/internal/servers/websocket"
 	"bychat/lib/redislib"
 	"bytes"
+	"flag"
 	"io/ioutil"
+	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 )
 
+var name string
+
 func main() {
+	flag.StringVar(&name, "name", "app", "your name")
+	flag.Parse()
+
 	r := gin.Default()
 
 	r.Use(gin.Recovery())
@@ -24,7 +33,7 @@ func main() {
 	routers.InitWeb(r)
 	routers.InitWebsocket()
 
-	config.InitConfig()
+	config.InitConfig(name)
 	common.SetOutPutFile(logrus.TraceLevel)
 
 	redislib.InitRedlisClient()
@@ -33,8 +42,11 @@ func main() {
 
 	task.ServerNodeInit()
 	// task.CleanConnctionInit()
+	go grpcserver.Init()
 
-	r.Run()
+	// http
+	httpPort := viper.GetString("app.httpPort")
+	http.ListenAndServe(":"+httpPort, r)
 }
 
 // LoggerToFile 日志中间件

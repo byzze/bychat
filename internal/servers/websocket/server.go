@@ -11,6 +11,11 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+/**
+	解析websocket操作指令执行的方法
+**/
+
+// BindUser 绑定用户信息
 func BindUser(client *Client, seq string, message []byte) (code uint32, msg string, data interface{}) {
 	code = common.OK
 
@@ -28,8 +33,16 @@ func BindUser(client *Client, seq string, message []byte) (code uint32, msg stri
 		return
 	}
 	client.Login(request.AppID, userOnline)
+	err = cache.SetUserOnlineInfo(request.UserID, userOnline)
+	if err != nil {
+		code = common.ServerError
+		logrus.WithFields(logrus.Fields{
+			"seq": seq,
+			"err": err,
+		}).Error("webSocket_request SetUserOnlineInfo")
+	}
 
-	clientManager.BindUser <- client
+	binUserdChannel(client)
 	return
 }
 
@@ -42,19 +55,19 @@ func Heartbeat(c *Client, seq string, message []byte) (code uint32, msg string, 
 	err := json.Unmarshal(message, request)
 	if err != nil {
 		code = common.ParameterIllegal
-		logrus.WithField("err", err.Error()).Error("Heartbeat")
+		logrus.WithField("err", err.Error()).Error("webSocket_request Heartbeat")
 		return
 	}
 
 	logrus.WithFields(logrus.Fields{
 		"UserId": request.UserID,
-	}).Info("webSocket_request 心跳接口")
+	}).Info("webSocket_request Heartbeat")
 
 	if !c.IsLogin() {
 		logrus.WithFields(logrus.Fields{
 			"UserId": request.UserID,
 			"seq":    seq,
-		}).Info("心跳接口 用户未登录")
+		}).Info("webSocket_request Heartbeat 用户未登录")
 		code = common.NotLoggedIn
 
 		return
@@ -67,20 +80,21 @@ func Heartbeat(c *Client, seq string, message []byte) (code uint32, msg string, 
 			logrus.WithFields(logrus.Fields{
 				"seq":     seq,
 				"c.AppID": c.AppID,
-			}).Warn("心跳接口 用户未登录")
+			}).Warn("webSocket_request Heartbeat 用户未登录")
 		} else {
 			code = common.ServerError
 			logrus.WithFields(logrus.Fields{
 				"seq":     seq,
 				"c.AppID": c.AppID,
 				"err":     err,
-			}).Error("心跳接口 GetUserOnlineInfo")
+			}).Error("webSocket_request Heartbeat GetUserOnlineInfo")
 		}
 		return
 	}
 
 	c.Heartbeat(currentTime)
 	userOnline.Heartbeat(currentTime)
+
 	err = cache.SetUserOnlineInfo(request.UserID, userOnline)
 	if err != nil {
 		code = common.ServerError
@@ -88,7 +102,7 @@ func Heartbeat(c *Client, seq string, message []byte) (code uint32, msg string, 
 			"seq":     seq,
 			"c.AppID": c.AppID,
 			"err":     err,
-		}).Error("心跳接口 SetUserOnlineInfo")
+		}).Error("webSocket_request Heartbeat SetUserOnlineInfo")
 	}
 	return
 }

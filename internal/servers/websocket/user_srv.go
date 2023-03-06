@@ -3,22 +3,73 @@ package websocket
 import (
 	"bychat/internal/helper"
 	"bychat/internal/models"
+	"bychat/internal/servers/grpcclient"
 	"bychat/lib/cache"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/sirupsen/logrus"
 )
+
+// Login 登录
+func Login(appID, userID uint32, nickName string) error {
+	logrus.WithFields(logrus.Fields{
+		"AppId":  appID,
+		"UserId": userID,
+	}).Info("webSocket_request 登录")
+
+	currentTime := uint64(time.Now().Unix())
+
+	var user = models.UserOnline{
+		ID:            userID,
+		NickName:      nickName,
+		LoginTime:     currentTime,
+		HeartbeatTime: 0,
+		LogOutTime:    0,
+		DeviceInfo:    "",
+		IsLogoff:      false,
+	}
+	return cache.SetUserOnlineInfo(userID, &user)
+}
+
+// LogOut 退出
+func LogOut(appID, userID uint32) {
+	logrus.WithFields(logrus.Fields{
+		"AppId":  appID,
+		"UserId": userID,
+	}).Info("webSocket_request 退出")
+	// 设置redis缓存
+	client := GetUserClient(appID, userID)
+	if client == nil {
+		return
+	}
+	unregisterChannel(client)
+}
 
 // GetRoomUserList 获取全部用户
 func GetRoomUserList(appID, roomID uint32) (userList []string) {
 	logrus.WithFields(logrus.Fields{
 		"roomID": roomID,
 	}).Info("获取全部用户")
-
-	for _, v := range cache.GetRoomUser(roomID) {
-		userList = append(userList, v.NickName)
+	currentTime := uint64(time.Now().Unix())
+	servers, err := cache.GetServerNodeAll(currentTime)
+	if err != nil {
+		logrus.Error("给全体用户发消息", err)
+		return
+	}
+	for i, server := range servers {
+		if server.IP == serverIP && server.Port == serverPort {
+			for _, v := range cache.GetRoomUser(roomID) {
+				userList = append(userList, v.NickName)
+			}
+		} else {
+			roomUserList, err := grpcclient.GetRoomUserList(servers[i], appID, roomID)
+			if err != nil {
+				logrus.Error("grpcclient GetRoomUserList", err)
+				continue
+			}
+			userList = append(userList, roomUserList...)
+		}
 	}
 
 	return
@@ -30,76 +81,14 @@ func GetUserClient(appID, userID uint32) (client *Client) {
 	return
 }
 
-// SendUserMessage 给用户发送消息
-func SendUserMessage(roomID, userID uint32, msgID, message string) (sendResults bool, err error) {
-	user, err := cache.GetUserOnlineInfo(userID)
-	if err != nil {
-		logrus.WithFields(logrus.Fields{
-			"userID": userID,
-			"err":    err,
-		}).Error("redis 获取失败")
-		return false, nil
-	}
-	nickname := user.NickName
-	// 封装发生数据格式
-	data := models.GetTextMsgData(nickname, msgID, message)
-	// 获取与用户建立的socket client，如果不为空，则是当前机器，否则需要通过redis查找对应的服务，并通过rpc发生消息
-	client := GetUserClient(roomID, userID)
-
-	if client != nil {
-		// 在本机发送
-		sendResults, err = SendUserMessageLocal(roomID, userID, data)
-		if err != nil {
-			fmt.Println("给用户发送消息", roomID, nickname, err)
-		}
-		return
-	}
-
-	info, err := cache.GetUserOnlineInfo(userID)
-	if err != nil {
-		logrus.WithFields(logrus.Fields{
-			"userID": userID,
-			"err":    err,
-		}).Error("给用户发送消息失败")
-		return false, nil
-	}
-	if !info.IsOnline() {
-		fmt.Println("用户不在线", userID)
-		return false, nil
-	}
-	// server := models.NewServer(info.AccIP, info.AccPort)
-	// msg, err := grpcclient.SendMsg(server, msgID, userID, models.MessageCmdMsg, models.MessageCmdMsg, message)
-	// if err != nil {
-	// 	fmt.Println("给用户发送消息失败", key, err)
-	// 	return false, err
-	// }
-	// fmt.Println("给用户发送消息成功-rpc", msg)
-	sendResults = true
-
-	return
-}
-
-// SendUserMessageLocal 给本机用户发送消息
-func SendUserMessageLocal(roomID, userID uint32, data string) (sendResults bool, err error) {
-	client := GetUserClient(roomID, userID)
-	if client == nil {
-		err = errors.New("用户不在线")
-		return
-	}
-
-	// 发送消息
-	client.SendMsg([]byte(data))
-	sendResults = true
-	return
-}
-
-// SendUserMessageAll 发送消息
+// SendUserMessageAll 发送消息 群聊
 func SendUserMessageAll(appID, roomID, userID uint32, msgID, cmd, message string) (sendResults bool, err error) {
 	sendResults = true
 	currentTime := uint64(time.Now().Unix())
 
 	servers, err := cache.GetServerNodeAll(currentTime)
 	if err != nil {
+		sendResults = false
 		logrus.Error("给全体用户发消息", err)
 		return
 	}
@@ -129,15 +118,20 @@ func SendUserMessageAll(appID, roomID, userID uint32, msgID, cmd, message string
 		data = models.GetTextMsgDataExit(uo.NickName, msgID, message)
 	default:
 		data = models.GetMsgData(uo.NickName, msgID, cmd, message)
+		cache.ZSetMessage(roomID, data)
 	}
 
-	cache.ZSetMessage(roomID, data)
-
 	for _, sv := range servers {
-		if sv.IP == serverIP && sv.Port == sv.Port {
+		if IsLocal(sv) {
 			AllSendMessages(appID, roomID, userID, data)
+		} else {
+			_, err := grpcclient.SendMsgAll(sv, appID, roomID, userID, msgID, cmd, message)
+			if err != nil {
+				logrus.Error("grpcclient SendMsgAll 给全体用户发消息", err)
+				sendResults = false
+				continue
+			}
 		}
-		// TODO 发送grpc所有人
 	}
 	return
 }
@@ -149,7 +143,7 @@ func AllSendMessages(appID, roomID, userID uint32, data string) {
 		"roomID": roomID,
 		"userID": userID,
 		"data":   data,
-	}).Info("全员广播")
+	}).Info("AllSendMessages")
 
 	// 获取userId对应的client，用于过滤
 	ignoreClient := clientManager.GetUserClient(appID, userID)
@@ -163,7 +157,7 @@ func EnterRoom(appID, roomID, userID uint32) error {
 		"AppId":  appID,
 		"UserId": userID,
 		"RoomID": roomID,
-	}).Info("webSocket_request 进入房间接口")
+	}).Info("EnterRoom")
 	uo, err := cache.GetUserOnlineInfo(userID)
 	if err != nil {
 		logrus.Error("EnterRoom Failed:", err)
@@ -191,7 +185,7 @@ func ExitRoom(appID, roomID, userID uint32) error {
 	logrus.WithFields(logrus.Fields{
 		"AppId":  appID,
 		"UserId": userID,
-	}).Info("webSocket_request 离开房间接口")
+	}).Info("ExitRoom")
 	seq := helper.GetOrderIDTime()
 	sendResults, err := SendUserMessageAll(appID, roomID, userID, seq, models.MessageCmdExit, "退出~")
 	if err != nil {
@@ -204,39 +198,4 @@ func ExitRoom(appID, roomID, userID uint32) error {
 
 	cache.DelRoomUser(roomID, userID)
 	return nil
-}
-
-// LogOut 退出
-func LogOut(appID, userID uint32) {
-	logrus.WithFields(logrus.Fields{
-		"AppId":  appID,
-		"UserId": userID,
-	}).Info("webSocket_request 退出")
-	// 设置redis缓存
-	client := GetUserClient(appID, userID)
-	if client == nil {
-		return
-	}
-	clientManager.Unregister <- client
-}
-
-// Login 登录
-func Login(appID, userID uint32, nickName string) error {
-	logrus.WithFields(logrus.Fields{
-		"AppId":  appID,
-		"UserId": userID,
-	}).Info("webSocket_request 登录")
-
-	currentTime := uint64(time.Now().Unix())
-
-	var user = models.UserOnline{
-		ID:            userID,
-		NickName:      nickName,
-		LoginTime:     currentTime,
-		HeartbeatTime: 0,
-		LogOutTime:    0,
-		DeviceInfo:    "",
-		IsLogoff:      false,
-	}
-	return cache.SetUserOnlineInfo(userID, &user)
 }

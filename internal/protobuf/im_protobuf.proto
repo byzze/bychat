@@ -9,26 +9,12 @@ package protobuf;
 
 // The AccServer service definition.
 service AccServer {
-    // 查询用户是否在线
-    rpc QueryUsersOnline (QueryUsersOnlineReq) returns (QueryUsersOnlineRsp) { }
     // 发送消息
     rpc SendMsg (SendMsgReq) returns (SendMsgRsp) {}
     // 给这台机器的房间内所有用户发送消息
     rpc SendMsgAll (SendMsgAllReq) returns (SendMsgAllRsp) {}
     // 获取用户列表
-    rpc GetUserList (GetRoomUserListReq) returns (GetRoomUserListRsp) {}
-}
-
-// 查询用户是否在线
-message QueryUsersOnlineReq {
-    uint32 appID = 1; // AppID
-    string userId = 2; // 用户ID
-}
-
-message QueryUsersOnlineRsp {
-    uint32 retCode = 1;
-    string errMsg = 2;
-    bool online = 3;
+    rpc GetRoomUserList (GetRoomUserListReq) returns (GetRoomUserListRsp) {}
 }
 
 // 发送消息
@@ -36,7 +22,7 @@ message SendMsgReq {
     string seq = 1; // 序列号
     uint32 appID = 2; // appID
     uint32 roomID = 3; // 房间Id
-    string userId = 4; // 用户ID
+    uint32 userID = 4; // 用户ID
     string cms = 5; // cms 动作: msg/enter/exit
     string type = 6; // type 消息类型，默认是 text
     string msg = 7; // msg
@@ -46,7 +32,7 @@ message SendMsgReq {
 message SendMsgRsp {
     uint32 retCode = 1;
     string errMsg = 2;
-    string sendMsgId = 3;
+    string sendMsgID = 3;
 }
 
 // 给这台机器的房间内所有用户发送消息
@@ -54,7 +40,7 @@ message SendMsgAllReq {
     string seq = 1; // 序列号
     uint32 appID = 2; // appID
     uint32 roomID = 3; // 房间Id
-    string userId = 4; // 不发送的用户ID
+    uint32 userID = 4; // 不发送的用户ID
     string cms = 5; // cms 动作: msg/enter/exit
     string type = 6; // type 消息类型，默认是 text
     string msg = 7; // msg
@@ -63,7 +49,7 @@ message SendMsgAllReq {
 message SendMsgAllRsp {
     uint32 retCode = 1;
     string errMsg = 2;
-    string sendMsgId = 3;
+    string sendMsgID = 3;
 }
 
 // 获取用户列表
@@ -75,5 +61,5 @@ message GetRoomUserListReq {
 message GetRoomUserListRsp {
     uint32 retCode = 1;
     string errMsg = 2;
-    repeated string userId = 3;
+    repeated string userID = 3;
 }

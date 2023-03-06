@@ -1,9 +1,9 @@
 app:
-  httpPort: 8080
-  httpUrl: localhost:8080
-  rpcPort: 9001
-  webSocketPort: 8089
-  webSocketUrl: localhost:8089
+  httpPort: 8081
+  httpUrl: localhost:8081
+  rpcPort: 9002
+  webSocketPort: 8088
+  webSocketUrl: localhost:8088
 
 redis:
   addr: "localhost:6379"

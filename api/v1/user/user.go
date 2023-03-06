@@ -57,7 +57,7 @@ func LogOut(ctx *gin.Context) {
 	base.Response(ctx, common.OK, "退出成功", data)
 }
 
-// GetRoomUserList 查看全部在线用户
+// GetRoomUserList 查看房间全部在线用户
 func GetRoomUserList(ctx *gin.Context) {
 	data := make(map[string]interface{})
 
@@ -119,6 +119,8 @@ func SendMessageAll(ctx *gin.Context) {
 	sendResults, err := websocket.SendUserMessageAll(appID, roomID, userID, msgID, models.MessageCmdMsg, message)
 	if err != nil {
 		data["sendResultsErr"] = err.Error()
+		base.Response(ctx, common.OperationFailure, err.Error(), data)
+		return
 	}
 
 	data["sendResults"] = sendResults

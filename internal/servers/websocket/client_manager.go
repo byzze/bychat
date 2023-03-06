@@ -20,7 +20,7 @@ type ClientManager struct {
 	Register    chan *Client       // 连接连接处理
 	BindUser    chan *Client       // 绑定用户信息
 	Unregister  chan *Client       // 断开连接处理程序
-	Broadcast   chan []byte        // 广播 向全部成员发送数据
+	// Broadcast   chan []byte        // 广播 向全部成员发送数据
 }
 
 // NewClientManager 管理client
@@ -31,7 +31,7 @@ func NewClientManager() (clientManager *ClientManager) {
 		Register:   make(chan *Client, 1000),
 		BindUser:   make(chan *Client, 1000),
 		Unregister: make(chan *Client, 1000),
-		Broadcast:  make(chan []byte, 1000),
+		// Broadcast:  make(chan []byte, 1000),
 	}
 
 	return
@@ -157,7 +157,7 @@ func (manager *ClientManager) GetUserKeys() (userKeys []string) {
 	return
 }
 
-// GetUserClients 获取用户客户端信息
+// GetUserClientList 获取用户客户端信息
 func (manager *ClientManager) GetUserClientList() (clients []*Client) {
 	clients = make([]*Client, 0)
 	manager.UserLock.RLock()
@@ -193,7 +193,7 @@ func (manager *ClientManager) EventRegister(client *Client) {
 	logrus.Info("EventRegister 用户建立连接:", client.Addr)
 }
 
-// EventRegister 用户建立连接事件
+// EvenBindUser 用户建立连接事件
 func (manager *ClientManager) EvenBindUser(client *Client) {
 	manager.AddUsers(client)
 	logrus.Info("EvenBindUser 用户信息绑定:", client.Addr)
@@ -212,7 +212,7 @@ func (manager *ClientManager) EventUnregister(client *Client) {
 
 	// 清除redis登录数据
 	userOnline, err := cache.GetUserOnlineInfo(client.UserID)
-	if err == nil {
+	if err == nil && client.Addr == userOnline.Addr {
 		userOnline.LogOut()
 		cache.SetUserOnlineInfo(client.UserID, userOnline)
 	}
@@ -227,6 +227,17 @@ func (manager *ClientManager) EventUnregister(client *Client) {
 		// 更加用户ID查询房间id TODO
 		SendUserMessageAll(client.AppID, 0, client.UserID, orderID, models.MessageCmdExit, "用户已经离开~")
 	}
+	client.Socket.Close()
+}
+
+// bindChannel 注销client
+func binUserdChannel(client *Client) {
+	clientManager.BindUser <- client
+}
+
+// unregisterChannel 注销client
+func unregisterChannel(client *Client) {
+	clientManager.Unregister <- client
 }
 
 // 管道处理程序
@@ -245,16 +256,16 @@ func (manager *ClientManager) start() {
 			// 断开连接事件
 			manager.EventUnregister(conn)
 
-		case message := <-manager.Broadcast:
-			// 广播事件
-			clients := manager.GetClients()
-			for conn := range clients {
-				select {
-				case conn.Send <- message:
-				default:
-					close(conn.Send)
-				}
-			}
+			// case message := <-manager.Broadcast:
+			// 	// 广播事件
+			// 	clients := manager.GetClients()
+			// 	for conn := range clients {
+			// 		select {
+			// 		case conn.Send <- message:
+			// 		default:
+			// 			close(conn.Send)
+			// 		}
+			// 	}
 		}
 	}
 }
@@ -269,7 +280,7 @@ func GetManagerInfo(isDebug string) (managerInfo map[string]interface{}) {
 	managerInfo["usersLen"] = clientManager.GetUsersLen()            // 登录用户数
 	managerInfo["chanRegisterLen"] = len(clientManager.Register)     // 未处理连接事件数
 	managerInfo["chanUnregisterLen"] = len(clientManager.Unregister) // 未处理退出登录事件数
-	managerInfo["chanBroadcastLen"] = len(clientManager.Broadcast)   // 未处理广播事件数
+	// managerInfo["chanBroadcastLen"] = len(clientManager.Broadcast)   // 未处理广播事件数
 
 	if isDebug == "true" {
 		addrList := make([]string, 0)
@@ -301,8 +312,8 @@ func ClearTimeoutConnections() {
 				"client.LoginTime":     client.LoginTime,
 				"client.HeartbeatTime": client.HeartbeatTime,
 			}).Info("心跳时间超时 关闭连接")
-
-			client.Socket.Close()
+			unregisterChannel(client)
+			// client.Socket.Close()
 		}
 	}
 }

@@ -9,16 +9,36 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type Client models.Client
+// Client client 管理
+const (
+	//HeartbeatExpirationTime 用户连接超时时间
+	HeartbeatExpirationTime = 60
+)
+
+// Client 用户连接
+type Client struct {
+	AppID   uint32 `json:"appID"`   // 登录的平台ID app/web/ios
+	UserID  uint32 `json:"userID"`  // userID
+	AccIP   string `json:"accIp"`   // acc Ip
+	AccPort string `json:"accPort"` // acc 端口
+	// ClientIP      string          `json:"clientIp"`                // 客户端Ip
+	// ClientPort    string          `json:"clientPort"`              // 客户端端口
+	Addr          string          `json:"addr,omitempty"`          // 客户端地址
+	Socket        *websocket.Conn `json:"socket,omitempty"`        // 用户连接
+	Send          chan []byte     `json:"send,omitempty"`          // 待发送的数据
+	FirstTime     uint64          `json:"firstTime,omitempty"`     // 首次连接事件
+	HeartbeatTime uint64          `json:"heartbeatTime,omitempty"` // 用户上次心跳时间
+	LoginTime     uint64          `json:"loginTime,omitempty"`     // 登录时间 登录以后才有
+}
 
 // NewClient 初始化
-func NewClient(appID uint32, accIP, accPort, ClientIP, ClientPort, addr string, socket *websocket.Conn, firstTime uint64) (client *Client) {
+func NewClient(appID uint32, accIP, accPort, addr string, socket *websocket.Conn, firstTime uint64) (client *Client) {
 	client = &Client{
-		AppID:         appID,
-		AccIP:         accIP,
-		AccPort:       accPort,
-		ClientIP:      ClientIP,
-		ClientPort:    ClientPort,
+		AppID:   appID,
+		AccIP:   accIP,
+		AccPort: accPort,
+		// ClientIP:      ClientIP,
+		// ClientPort:    ClientPort,
 		Addr:          addr,
 		Socket:        socket,
 		Send:          make(chan []byte, 100),
@@ -28,6 +48,7 @@ func NewClient(appID uint32, accIP, accPort, ClientIP, ClientPort, addr string, 
 	return
 }
 
+// GetKey 获取client key
 func (client *Client) GetKey() string {
 	key := fmt.Sprintf("%d_%d", client.AppID, client.UserID)
 	return key
@@ -42,7 +63,10 @@ func (client *Client) read() {
 	}()
 
 	defer func() {
-		logrus.Info("读取客户端数据 关闭send", client)
+		logrus.WithFields(logrus.Fields{
+			"client.Addr":   client.Addr,
+			"client.UserID": client.UserID,
+		}).Info("读取客户端数据 关闭send")
 		// close(c.Send)
 	}()
 
@@ -71,9 +95,12 @@ func (client *Client) write() {
 	}()
 
 	defer func() {
-		clientManager.Unregister <- client
-		client.Socket.Close()
-		logrus.Info("Client发送数据 defer", client)
+		// clientManager.Unregister <- client
+		// client.Socket.Close()
+		logrus.WithFields(logrus.Fields{
+			"client.Addr":   client.Addr,
+			"client.UserID": client.UserID,
+		}).Info("Client发送数据 defer")
 	}()
 
 	for {
@@ -111,6 +138,8 @@ func (client *Client) close() {
 
 // Login 用户登录
 func (client *Client) Login(appID uint32, userOnline *models.UserOnline) {
+	userOnline.Addr = client.Addr
+
 	client.LoginTime = userOnline.LoginTime
 	client.AppID = appID
 	client.UserID = userOnline.ID
@@ -121,12 +150,11 @@ func (client *Client) Login(appID uint32, userOnline *models.UserOnline) {
 // Heartbeat 用户心跳
 func (client *Client) Heartbeat(currentTime uint64) {
 	client.HeartbeatTime = currentTime
-	return
 }
 
 // IsHeartbeatTimeout 心跳超时
 func (client *Client) IsHeartbeatTimeout(currentTime uint64) (timeout bool) {
-	if client.HeartbeatTime+models.HeartbeatExpirationTime <= currentTime {
+	if client.HeartbeatTime+HeartbeatExpirationTime <= currentTime {
 		timeout = true
 	}
 	return
@@ -134,10 +162,10 @@ func (client *Client) IsHeartbeatTimeout(currentTime uint64) (timeout bool) {
 
 // IsLogin 是否登录了
 func (client *Client) IsLogin() (isLogin bool) {
-	if _, ok := clientManager.Users[client.GetKey()]; ok {
-		return true
+	c := clientManager.GetUserClient(client.AppID, client.UserID)
+	if c != nil {
+		isLogin = true
 	}
-	// 用户登录了
 	return
 }
 
@@ -145,8 +173,6 @@ func (client *Client) IsLogin() (isLogin bool) {
 func (client *Client) UserIsLocal(localIP, localPort string) (result bool) {
 	if client.AccIP == localIP && client.AccPort == localPort {
 		result = true
-
-		return
 	}
 	return
 }

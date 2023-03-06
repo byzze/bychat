@@ -38,20 +38,6 @@ func GetAppIds() []uint32 {
 	return appIDs
 }
 
-// GetServerNode 获取id
-func GetServerNode() (server *models.ServerNode) {
-	server = models.NewServerNode(serverIP, serverPort)
-	return
-}
-
-// IsLocal 校验本地
-func IsLocal(server *models.ServerNode) (isLocal bool) {
-	if server.IP == serverIP && server.Port == serverPort {
-		isLocal = true
-	}
-	return
-}
-
 // InRoomIDs 校验是否在房间id
 func InRoomIDs(roomID uint32) (inRoomID bool) {
 	for _, value := range roomIDs {
@@ -72,6 +58,20 @@ func GetDefaultRoomID() (roomID uint32) {
 // GetDefaultAppID 获取df id
 func GetDefaultAppID() (appID uint32) {
 	appID = defaultAppID
+	return
+}
+
+// GetServerNode 获取id
+func GetServerNode() (server *models.ServerNode) {
+	server = models.NewServerNode(serverIP, serverPort)
+	return
+}
+
+// IsLocal 校验本地
+func IsLocal(server *models.ServerNode) (isLocal bool) {
+	if server.IP == serverIP && server.Port == serverPort {
+		isLocal = true
+	}
 	return
 }
 
@@ -107,7 +107,7 @@ func wsPage(w http.ResponseWriter, req *http.Request) {
 	logrus.Info("webSocket 建立连接:", conn.RemoteAddr().String())
 
 	currentTime := uint64(time.Now().Unix())
-	client := NewClient(0, conn.RemoteAddr().String(), "", "", "", "", conn, currentTime)
+	client := NewClient(0, serverIP, serverPort, conn.RemoteAddr().String(), conn, currentTime)
 
 	go client.read()
 	go client.write()
