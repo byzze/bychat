@@ -3,7 +3,6 @@ package home
 import (
 	"bychat/internal/servers/websocket"
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
@@ -12,18 +11,9 @@ import (
 
 // Index 聊天页面
 func Index(c *gin.Context) {
-	roomIDStr := c.Query("roomID")
-	roomIDUint64, _ := strconv.ParseInt(roomIDStr, 10, 32)
-	roomID := uint32(roomIDUint64)
-	if !websocket.InRoomIDs(roomID) {
-		roomID = websocket.GetDefaultRoomID()
-	}
-
-	logrus.Info("http_request 聊天首页", roomID)
-
+	logrus.Info("http_request 聊天首页")
 	data := gin.H{
-		"title": "聊天首页",
-		// "roomID":       roomID,
+		"title":        "聊天首页",
 		"appID":        websocket.GetDefaultAppID(),
 		"httpUrl":      viper.GetString("app.httpUrl"),
 		"webSocketUrl": viper.GetString("app.webSocketUrl"),
