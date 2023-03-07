@@ -4,7 +4,7 @@ import (
 	"bychat/internal/common"
 	"bychat/internal/models"
 	"bychat/internal/protobuf"
-	"bychat/internal/servers/websocket"
+	"bychat/internal/websocket"
 	"bychat/lib/cache"
 	"context"
 	"fmt"
@@ -67,14 +67,19 @@ func (server *server) GetRoomUserList(c context.Context, req *protobuf.GetRoomUs
 	rsp = &protobuf.GetRoomUserListRsp{}
 
 	// 本机
-	userResList := cache.GetRoomUser(req.GetRoomID())
+	userResList := cache.GetChatRoomUser(req.GetRoomID())
 
 	setErr(rsp, common.OK, "")
-	var userList []string
+	var userList []*protobuf.ResponUserOnline
 	for _, v := range userResList {
-		userList = append(userList, v.NickName)
+		tmp := &protobuf.ResponUserOnline{
+			Id:       v.ID,
+			NickName: v.NickName,
+			Avatar:   v.Avatar,
+		}
+		userList = append(userList, tmp)
 	}
-	rsp.UserID = userList
+	rsp.ResUserOnline = userList
 
 	logrus.Info("grpc_response 获取用户列表:", rsp.String())
 

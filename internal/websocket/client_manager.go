@@ -104,7 +104,10 @@ func (manager *ClientManager) DelClients(client *Client) {
 func (manager *ClientManager) GetUserClient(appID, userID uint32) (client *Client) {
 	manager.UserLock.RLock()
 	defer manager.UserLock.RUnlock()
-
+	logrus.WithFields(logrus.Fields{
+		"appID":  appID,
+		"userID": userID,
+	}).Info("ClientManager GetUserClient")
 	key := fmt.Sprintf("%d_%d", appID, userID)
 	if value, ok := manager.Users[key]; ok {
 		client = value
@@ -170,18 +173,19 @@ func (manager *ClientManager) GetUserClientList() (clients []*Client) {
 }
 
 // 向全部成员(除了自己)发送数据
-func (manager *ClientManager) sendAll(message []byte, roomID uint32, ignoreClient *Client) {
+func (manager *ClientManager) sendAll(message []byte, roomID, userID uint32, ignoreClient *Client) {
 	clients := manager.GetUserClientList()
 
-	userList := cache.GetRoomUser(roomID)
-	tmpMap := make(map[uint32]struct{})
-	for _, v := range userList {
-		tmpMap[v.ID] = struct{}{}
-	}
-
+	tmpRoomID := cache.GetChatRoomID(userID)
+	logrus.WithFields(logrus.Fields{
+		"roomID":        roomID,
+		"userID":        userID,
+		"tmpRoomID":     tmpRoomID,
+		"ignoreClient":  ignoreClient.UserID,
+		"ignoreClient1": ignoreClient.AppID,
+	}).Info("sendAll 发送消息")
 	for _, conn := range clients {
-		_, ok := tmpMap[conn.UserID]
-		if conn != ignoreClient && ok {
+		if conn != ignoreClient && roomID == tmpRoomID {
 			conn.SendMsg(message)
 		}
 	}
@@ -193,10 +197,11 @@ func (manager *ClientManager) EventRegister(client *Client) {
 	logrus.Info("EventRegister 用户建立连接:", client.Addr)
 }
 
-// EvenBindUser 用户建立连接事件
-func (manager *ClientManager) EvenBindUser(client *Client) {
+// EventBindUser 用户信息绑定
+func (manager *ClientManager) EventBindUser(client *Client) {
+
 	manager.AddUsers(client)
-	logrus.Info("EvenBindUser 用户信息绑定:", client.Addr)
+	logrus.Info("EvenBindUser 用户信息绑定:", client.Addr, client)
 }
 
 // EventUnregister 用户断开连接
@@ -210,11 +215,13 @@ func (manager *ClientManager) EventUnregister(client *Client) {
 		return
 	}
 
+	roomID := cache.GetChatRoomID(client.UserID)
 	// 清除redis登录数据
 	userOnline, err := cache.GetUserOnlineInfo(client.UserID)
 	if err == nil && client.Addr == userOnline.Addr {
 		userOnline.LogOut()
 		cache.SetUserOnlineInfo(client.UserID, userOnline)
+		cache.DelChatRoomUser(roomID, client.UserID)
 	}
 
 	// 关闭 chan
@@ -225,7 +232,7 @@ func (manager *ClientManager) EventUnregister(client *Client) {
 	if client.UserID != 0 {
 		orderID := helper.GetOrderIDTime()
 		// 更加用户ID查询房间id TODO
-		SendUserMessageAll(client.AppID, 0, client.UserID, orderID, models.MessageCmdExit, "用户已经离开~")
+		SendUserMessageAll(client.AppID, roomID, client.UserID, orderID, models.MessageCmdExit, "用户已经离开~")
 	}
 	client.Socket.Close()
 }
@@ -250,7 +257,7 @@ func (manager *ClientManager) start() {
 
 		case conn := <-manager.BindUser:
 			// 绑定用户信息
-			manager.EvenBindUser(conn)
+			manager.EventBindUser(conn)
 
 		case conn := <-manager.Unregister:
 			// 断开连接事件

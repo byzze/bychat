@@ -3,10 +3,10 @@ package main
 import (
 	"bychat/config"
 	"bychat/internal/common"
+	"bychat/internal/grpcserver"
 	"bychat/internal/routers"
-	"bychat/internal/servers/grpcserver"
-	"bychat/internal/servers/task"
-	"bychat/internal/servers/websocket"
+	"bychat/internal/task"
+	"bychat/internal/websocket"
 	"bychat/lib/redislib"
 	"bytes"
 	"flag"

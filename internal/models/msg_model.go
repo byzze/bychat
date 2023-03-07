@@ -16,10 +16,10 @@ const (
 
 // Message 消息的定义
 type Message struct {
-	To   string `json:"to"`   // 目标
-	Type string `json:"type"` // 消息类型 text/img/
-	Msg  string `json:"msg"`  // 消息内容
-	From string `json:"from"` // 发送者
+	To   string      `json:"to"`   // 目标
+	Type string      `json:"type"` // 消息类型 text/img/
+	Msg  interface{} `json:"msg"`  // 消息内容 文本，图像，视频，音频，文件
+	From string      `json:"from"` // 发送者
 }
 
 // NewTextMsg 文本消息构造

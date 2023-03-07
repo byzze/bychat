@@ -55,16 +55,9 @@ func GetUserOnlineInfo(userID uint32) (userOnline *models.UserOnline, err error)
 		logrus.WithFields(logrus.Fields{
 			"userKey": userID,
 			"err":     err,
-		}).Error("获取用户在线数据 json Unmarshal")
+		}).Error("GetUserOnlineInfo json Unmarshal")
 		return
 	}
-
-	logrus.WithFields(logrus.Fields{
-		"userKey":       userID,
-		"LoginTime":     userOnline.LoginTime,
-		"HeartbeatTime": userOnline.HeartbeatTime,
-		"IsLogoff":      userOnline.IsLogoff,
-	}).Info("获取用户在线数据")
 	return
 }
 
@@ -78,7 +71,7 @@ func SetUserOnlineInfo(userKey uint32, userOnline *models.UserOnline) (err error
 		logrus.WithFields(logrus.Fields{
 			"key": key,
 			"err": err,
-		}).Error("设置用户在线数据 json Marshal")
+		}).Error("SetUserOnlineInfo json Marshal Err")
 		return
 	}
 
@@ -87,8 +80,7 @@ func SetUserOnlineInfo(userKey uint32, userOnline *models.UserOnline) (err error
 		logrus.WithFields(logrus.Fields{
 			"key": key,
 			"err": err,
-		}).Error("设置用户在线数据")
-		return
+		}).Error("SetUserOnlineInfo Err")
 	}
 	return
 }

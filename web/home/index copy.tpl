@@ -414,7 +414,7 @@
                 } else if (data_array.cmd === "login") {
                       console.log("用户进入房间:" + person);
                       
-                      enterRoom()
+                      EnterChatRoom()
                 }
             };
 
@@ -537,7 +537,7 @@
                     }
                 });
             }
-            function enterRoom() {
+            function EnterChatRoom() {
                 $.ajax({
                     type: "POST",
                     url: 'http://{{ .httpUrl }}/user/enter',

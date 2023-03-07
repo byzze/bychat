@@ -13,9 +13,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-// rpc client
-// 给全体用户发送消息
-// link::https://github.com/grpc/grpc-go/blob/master/examples/helloworld/greeter_client/main.go
+// SendMsgAll 给全体用户发送消息 link::https://github.com/grpc/grpc-go/blob/master/examples/helloworld/greeter_client/main.go
 func SendMsgAll(server *models.ServerNode, appID, roomID, userID uint32, seq, cmd string, message string) (sendMsgID string, err error) {
 	// Set up a connection to the server.
 	conn, err := grpc.Dial(server.String(), grpc.WithInsecure())
@@ -56,10 +54,9 @@ func SendMsgAll(server *models.ServerNode, appID, roomID, userID uint32, seq, cm
 	return
 }
 
-// 获取用户列表
-// link::https://github.com/grpc/grpc-go/blob/master/examples/helloworld/greeter_client/main.go
-func GetRoomUserList(server *models.ServerNode, appID, roomID uint32) (userIDs []string, err error) {
-	userIDs = make([]string, 0)
+// GetRoomUserList 获取用户列表 link::https://github.com/grpc/grpc-go/blob/master/examples/helloworld/greeter_client/main.go
+func GetRoomUserList(server *models.ServerNode, appID, roomID uint32) (userList []*models.ResponseUserOnline, err error) {
+	userList = make([]*models.ResponseUserOnline, 0)
 
 	conn, err := grpc.Dial(server.String(), grpc.WithInsecure())
 	if err != nil {
@@ -88,7 +85,14 @@ func GetRoomUserList(server *models.ServerNode, appID, roomID uint32) (userIDs [
 		return
 	}
 
-	userIDs = rsp.GetUserID()
-	logrus.Info("获取用户列表 成功:", userIDs)
+	for _, v := range rsp.GetResUserOnline() {
+		tmp := &models.ResponseUserOnline{
+			ID:       v.Id,
+			NickName: v.NickName,
+			Avatar:   v.Avatar,
+		}
+		userList = append(userList, tmp)
+	}
+	logrus.Info("grpcclient 获取用户列表 成功:", userList)
 	return
 }

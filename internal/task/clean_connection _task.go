@@ -1,7 +1,7 @@
 package task
 
 import (
-	"bychat/internal/servers/websocket"
+	"bychat/internal/websocket"
 	"runtime/debug"
 	"time"
 
@@ -16,7 +16,7 @@ import (
 
 // CleanConnctionInit 清楚链接
 func CleanConnctionInit() {
-	Timer(3*time.Second, 30*time.Second, cleanConnection, "", nil, nil)
+	Timer(3*time.Second, 10*time.Second, cleanConnection, "", nil, nil)
 }
 
 // 清理超时连接

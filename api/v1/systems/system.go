@@ -3,7 +3,7 @@ package systems
 import (
 	"bychat/api/v1/base"
 	"bychat/internal/common"
-	"bychat/internal/servers/websocket"
+	"bychat/internal/websocket"
 	"runtime"
 
 	"github.com/gin-gonic/gin"

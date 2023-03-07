@@ -6,6 +6,7 @@ import "encoding/json"
 
 // Head 消息头
 type Head struct {
+	ChatID   string    `json:"chatID"`   // 会话id
 	Seq      string    `json:"seq"`      // 消息的Id
 	Cmd      string    `json:"cmd"`      // 消息的cmd 动作
 	Response *Response `json:"response"` // 消息体
@@ -16,14 +17,6 @@ type Response struct {
 	Code    uint32      `json:"code"`
 	CodeMsg string      `json:"codeMsg"`
 	Data    interface{} `json:"data"` // 数据 json
-}
-
-// PushMsg 数据结构体
-type PushMsg struct {
-	Seq  string `json:"seq"`
-	UUID uint64 `json:"uuid"`
-	Type string `json:"type"`
-	Msg  string `json:"msg"`
 }
 
 // NewResponseHead 设置返回消息

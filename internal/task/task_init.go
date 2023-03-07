@@ -17,7 +17,7 @@ func Timer(delay, tick time.Duration, fun TimerFunc, param interface{}, funcDefe
 		if fun == nil {
 			return
 		}
-
+		// 初始delay开始执行
 		t := time.NewTimer(delay)
 		defer t.Stop()
 
@@ -28,6 +28,7 @@ func Timer(delay, tick time.Duration, fun TimerFunc, param interface{}, funcDefe
 				if fun(param) == false {
 					return
 				}
+				// 后续多少time开始执行
 				t.Reset(tick)
 			}
 		}

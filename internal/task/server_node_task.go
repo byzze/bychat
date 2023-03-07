@@ -1,7 +1,7 @@
 package task
 
 import (
-	"bychat/internal/servers/websocket"
+	"bychat/internal/websocket"
 	"bychat/lib/cache"
 	"runtime/debug"
 	"time"

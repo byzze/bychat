@@ -29,10 +29,3 @@ type MsgRequest struct {
 	Message string `json:"message"`
 	Cmd     string `json:"cmd"`
 }
-
-// EnterRoomRequest 进入房间请求数据
-type EnterRoomRequest struct {
-	AppID  uint32 `json:"appID,omitempty"`
-	RoomID uint32 `json:"roomID,omitempty"`
-	UserID uint32 `json:"userID,omitempty"`
-}

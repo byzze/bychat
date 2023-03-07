@@ -62,7 +62,6 @@ func DelServerNodeInfo(serverNode *models.ServerNode) (err error) {
 	}
 
 	if number != 1 {
-
 		return
 	}
 	// 下线服务器，重新设置过期时间

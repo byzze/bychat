@@ -246,15 +246,7 @@
             有人退出以后删除 -->
             </div>
             <div class="chat-with">
-                <div class="admin-group">
-                    <div class="admin-img">
-                        管理员
-                    </div>
-                    <div class="admin-msg">
-                        <i class="triangle-admin"></i>
-                        <span class="admin-reply">欢迎加入聊天~</span>
-                    </div>
-                </div>
+
             </div>
             <div class="send-msg">
                 <!-- <input type="text" name="msg" placeholder="你想要发送的消息" value="" size="35">
@@ -274,13 +266,13 @@
 
                 <button onclick="logout()">退出</button>
 
-                <button onclick="enterRoom(101)">进入聊天室-Id:101</button>
+                <button onclick="EnterChatRoom(101)">进入聊天室-Id:101</button>
 
-                <button onclick="enterRoom(102)">进入聊天室-Id:102</button>
+                <button onclick="EnterChatRoom(102)">进入聊天室-Id:102</button>
 
-                <button onclick="enterRoom(103)">进入聊天室-Id:103</button>
+                <button onclick="EnterChatRoom(103)">进入聊天室-Id:103</button>
 
-                <button onclick="enterRoom(104)">进入聊天室-Id:104</button>
+                <button onclick="EnterChatRoom(104)">进入聊天室-Id:104</button>
             </div>
         </div>
 
@@ -289,6 +281,7 @@
             var start = 0
             var limit = 5
             var roomID = 0
+            var appID = {{ .appID }}
             function currentTime() {
                 let timeStamp = (new Date()).valueOf();
                 return timeStamp
@@ -341,6 +334,23 @@
                 return html
             }
 
+            function welcome() {
+                let html = '<div class="admin-group">' +
+                    '<div class="admin-img">' +
+                    '管理员' +
+                    '</div>' +
+                    '<div class="admin-msg">' +
+                    '<i class="triangle-admin"></i>' +
+                    '<span class="admin-reply">欢迎加入聊天~</span>' +
+                    '</div>' +
+                    '</div>'
+                return html
+            }
+
+            function exitChatRoom() {
+                $(".chat-with").html("");
+            }
+
             function myMsg(name, msg) {
                 let html = '<div class="user-group">' +
                     '<div class="user-msg">' +
@@ -354,7 +364,6 @@
             }
 
             function userDiv(name) {
-
                 let html = '<div id="' + name + '">' +
                     name +
                     '</div>';
@@ -363,6 +372,8 @@
             }
 
             function addChatWith(msg) {
+                console.log(msg)
+
                 $(".chat-with").append(msg);
                 // 页面滚动条置底
                 $('.chat-with').animate({ scrollTop: document.body.clientHeight + 10000 + 'px' }, 80);
@@ -397,7 +408,7 @@
                         "cmd": "bind",
                         "data": {
                             "userID": person.id,
-                            "appID": 0,
+                            "appID": appID,
                             "token": token
                         },
                     }
@@ -461,7 +472,7 @@
                 $.ajax({
                     type: "POST",
                     url: 'http://{{ .httpUrl }}/user/logout',
-                    data: param,
+                    data: JSON.stringify(param),
                     contentType: "application/x-www-form-urlencoded",
                     success: function (data) {
                         console.log(data);
@@ -470,17 +481,15 @@
             }
 
             function login() {
-                // person = randomNumber(10000, 99999)
-                console.log("用户准备登陆:" + person);
                 var param = {
                     "id": person.id,
                     "nickname": person.name,
-                    "appID": 0
+                    "appID": appID
                 }
                 $.ajax({
                     type: "POST",
                     url: 'http://{{ .httpUrl }}/user/login',
-                    data: param,
+                    data: JSON.stringify(param),
                     contentType: "application/x-www-form-urlencoded",
                     success: function (data) {
                         console.log(data);
@@ -494,26 +503,18 @@
                 let msg = $("input[name='msg']").val()
                 console.log("button 点击:" + msg);
                 if (msg !== "") {
-                    /* var data = {
-                             roomID: roomID,
-                             userID: person,
-                             msgID: sendID(),
-                             message: msg,
-                             cmd: "msg",
-                         }
-                     var val = JSON.stringify(data)
-                     ws.send('{"seq":"' + sendID() + '","cmd":"msg","data": ' + val + '}');
-                     addChatWith(myMsg(person, msg))
-                     $("input[name='msg']").val(""); */
+                    var param = {
+                        userID: person.id,
+                        roomID: roomID,
+                        msgID: sendID(),
+                        message: msg,
+                        appID: appID,
+                    }
                     $.ajax({
                         type: "POST",
                         url: 'http://{{ .httpUrl }}/user/sendMessageAll',
-                        data: {
-                            userID: person.id,
-                            roomID: roomID,
-                            msgID: sendID(),
-                            message: msg,
-                        },
+                        data: param,
+                        data: JSON.stringify(param),
                         contentType: "application/x-www-form-urlencoded",
                         success: function (data) {
                             console.log(data);
@@ -523,7 +524,7 @@
                     });
                 }
             }
-
+            var mapUser = new Map();
             function getUserList() {
                 $(".personnel-list-ul").html("");
                 $.ajax({
@@ -531,7 +532,7 @@
                     url: "http://{{ .httpUrl }}/user/list?roomID=" + roomID,
                     dataType: "json",
                     success: function (data) {
-                        console.log("user list:" + data.code + " userList:" + data);
+                        console.log("user list:" + data.code + " userList:" + data.data);
                         if (data.code != 0) {
                             return false
                         }
@@ -539,14 +540,15 @@
                         //i表示在data中的索引位置，n表示包含的信息的对象
                         $.each(data.data.userList, function (i, n) {
                             //获取对象中属性为optionsValue的值
-                            let name = n
+                            console.log(n)
+                            mapUser.set(n.nickName, n.ID)
+                            let name = n.nickName
                             if (n == person.name) {
                                 name = name + "(自己)"
                             }
-                            music += "<li id=\"" + n + "\">" + name + "</li>";
+                            music += "<li id=\"" + n.nickName + "\">" + name + "</li>";
                         });
                         $(".personnel-list-ul").append(music);
-
                         return false
                     }
                 });
@@ -564,7 +566,6 @@
                         }
                         start = res.data.start
                         limit = res.data.limit
-                        console.log("message list====:" + res.data)
                         //i表示在data中的索引位置，n表示包含的信息的对象
                         $.each(res.data.data, function (i, n) {
                             data_array = JSON.parse(n);
@@ -584,42 +585,51 @@
                     }
                 });
             }
-            function enterRoom(rid) {
+
+            function EnterChatRoom(rid) {
                 if (roomID != 0) {
-                    exitRoom(roomID)
+                    ExitChatRoom(roomID)
                 }
                 roomID = rid
+                param = {
+                    roomID: rid,
+                    userID: person.id,
+                    appID: appID,
+                }
                 $.ajax({
                     type: "POST",
                     url: 'http://{{ .httpUrl }}/user/enter',
-                    data: {
-                        roomID: rid,
-                        userID: person.id,
-                        appID: 0,
-                    },
+                    data: JSON.stringify(param),
                     contentType: "application/x-www-form-urlencoded",
                     success: function (data) {
                         console.log(data);
-                        addChatWith(myMsg(person.name, "我进入了" + rid + "房间"))
-                        getHistoryMessageList()
-                        setTimeout(function () { getUserList(); }, 500); // 1秒后将会调用执行
-                        $("input[name='msg']").val("");
+                        if (data.code == 0) {
+                            addChatWith(welcome())
+                            addChatWith(myMsg(person.name, "我进入了" + rid + "房间"))
+                            getHistoryMessageList()
+                            setTimeout(function () { getUserList(); }, 500); // 1秒后将会调用执行
+                            $("input[name='msg']").val("");
+                        }
                     }
                 });
             }
-            function exitRoom(rid) {
+            function ExitChatRoom(rid) {
                 roomID = 0
+                param = {
+                    roomID: rid,
+                    userID: person.id,
+                    appID: appID,
+                }
                 $.ajax({
                     type: "POST",
                     url: 'http://{{ .httpUrl }}/user/exit',
-                    data: {
-                        roomID: rid,
-                        userID: person.id,
-                        appID: 0,
-                    },
+                    data: JSON.stringify(param),
                     contentType: "application/x-www-form-urlencoded",
                     success: function (data) {
-                        console.log(data);
+                        if (data.code == 0) {
+                            console.log(data);
+                            exitChatRoom()
+                        }
                     }
                 });
             }

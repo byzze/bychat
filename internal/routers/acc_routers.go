@@ -1,6 +1,6 @@
 package routers
 
-import "bychat/internal/servers/websocket"
+import "bychat/internal/websocket"
 
 // InitWebsocket 初始化
 func InitWebsocket() {

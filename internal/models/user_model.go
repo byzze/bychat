@@ -13,13 +13,21 @@ const (
 // UserOnline 用户在线状态
 type UserOnline struct {
 	ID            uint32 `json:"id"`            // 用户id
-	NickName      string `json:"name"`          // 用户name
+	NickName      string `json:"nickName"`      // 用户nickName
+	Avatar        string `json:"avatar"`        // 头像地址
 	Addr          string `json:"addr"`          // 客户端地址
 	LoginTime     uint64 `json:"loginTime"`     // 用户上次登录时间
 	HeartbeatTime uint64 `json:"heartbeatTime"` // 用户上次心跳时间
 	LogOutTime    uint64 `json:"logOutTime"`    // 用户退出登录的时间
 	DeviceInfo    string `json:"deviceInfo"`    // 设备信息
 	IsLogoff      bool   `json:"isLogoff"`      // 是否下线
+}
+
+// ResponseUserOnline 返回体
+type ResponseUserOnline struct {
+	ID       uint32 `json:"id"`       // 用户id
+	NickName string `json:"nickName"` // 用户name
+	Avatar   string `json:"avatar"`
 }
 
 // type RoomInfo struct {
