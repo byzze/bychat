@@ -17,13 +17,26 @@ import (
 type Param struct {
 	ID       uint32 `json:"id"`
 	NickName string `json:"nickname"`
-	MsgID    string `json:"msgID"`
-	Message  string `json:"message"`
 	AppID    uint32 `form:"appID" json:"appID"  binding:"-"`
 	RoomID   uint32 `form:"roomID" json:"roomID"  binding:"-"`
 	UserID   uint32 `form:"userID" json:"userID" `
 	Start    int64  `form:"start"`
 	Limit    int64  `form:"limit"`
+
+	MsgID       string `json:"msgID"`
+	MessageType string `json:"messageType"`
+	TextParam
+	ImgParam
+}
+
+type TextParam struct {
+	Message string `json:"message"`
+}
+
+type ImgParam struct {
+	URL  string `json:"url"`
+	Name string `json:"name"`
+	Size int64  `json:"size"`
 }
 
 // Login 登录
@@ -105,26 +118,40 @@ func SendMessageAll(ctx *gin.Context) {
 		base.Response(ctx, common.ParameterIllegal, "", nil)
 		return
 	}
-
 	if param.RoomID == 0 {
 		base.Response(ctx, common.ParameterIllegal, "", data)
 		return
 	}
 
 	logrus.WithFields(logrus.Fields{
-		"roomID":  param.RoomID,
-		"userID":  param.UserID,
-		"msgID":   param.MsgID,
-		"message": param.Message,
-	}).Info("SendMessageAll")
+		"roomID":      param.RoomID,
+		"userID":      param.UserID,
+		"msgID":       param.MsgID,
+		"message":     param.Message,
+		"messageType": param.MessageType,
+	}).Info("SendMessageAll Param")
 
 	if cache.SeqDuplicates(param.MsgID) {
 		logrus.Info("数据重复：", param.MsgID)
 		base.Response(ctx, common.OK, "", data)
 		return
 	}
+	uo, err := cache.GetUserOnlineInfo(param.UserID)
+	if err != nil {
+		logrus.Error("给全体用户发消息", err)
+		return
+	}
+	var message string
+	switch param.MessageType {
+	case models.MessageTypeText:
+		message = models.GetTextMsgData(uo.NickName, param.MsgID, param.Message)
+	case models.MessageTypeImg:
+		message = models.GetImgMsgData(uo.NickName, param.MsgID, param.URL, param.NickName, param.Size)
+	}
+	// 缓存聊天数据
+	cache.ZSetMessage(param.RoomID, message)
 
-	sendResults, err := websocket.SendUserMessageAll(param.AppID, param.RoomID, param.UserID, param.MsgID, models.MessageCmdMsg, param.Message)
+	sendResults, err := websocket.SendUserMessageAll(param.AppID, param.RoomID, param.UserID, message)
 	if err != nil {
 		data["sendResultsErr"] = err.Error()
 		base.Response(ctx, common.OperationFailure, err.Error(), data)

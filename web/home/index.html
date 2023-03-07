@@ -372,8 +372,6 @@
             }
 
             function addChatWith(msg) {
-                console.log(msg)
-
                 $(".chat-with").append(msg);
                 // 页面滚动条置底
                 $('.chat-with').animate({ scrollTop: document.body.clientHeight + 10000 + 'px' }, 80);
@@ -424,7 +422,8 @@
 
                     if (data_array.cmd === "msg") {
                         data = data_array.response.data
-                        addChatWith(msg(data.from, data.msg))
+                        s = JSON.stringify(data.msg)
+                        addChatWith(msg(data.from, s))
                     } else if (data_array.cmd === "enter") {
                         data = data_array.response.data
                         addChatWith(msg("管理员", "欢迎 " + data.from + " 加入~"))
@@ -504,17 +503,27 @@
                 console.log("button 点击:" + msg);
                 if (msg !== "") {
                     var param = {
+                        messageType: "text",
                         userID: person.id,
                         roomID: roomID,
                         msgID: sendID(),
                         message: msg,
                         appID: appID,
                     }
+                    var param1 = {
+                        messageType: "img",
+                        userID: person.id,
+                        roomID: roomID,
+                        msgID: sendID(),
+                        appID: appID,
+                        url: "xxxxx.com.com",
+                        name: "p1",
+                        size: 10,
+                    }
                     $.ajax({
                         type: "POST",
                         url: 'http://{{ .httpUrl }}/user/sendMessageAll',
-                        data: param,
-                        data: JSON.stringify(param),
+                        data: JSON.stringify(param1),
                         contentType: "application/x-www-form-urlencoded",
                         success: function (data) {
                             console.log(data);

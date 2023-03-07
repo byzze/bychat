@@ -2,7 +2,6 @@ package grpcserver
 
 import (
 	"bychat/internal/common"
-	"bychat/internal/models"
 	"bychat/internal/protobuf"
 	"bychat/internal/websocket"
 	"bychat/lib/cache"
@@ -42,14 +41,7 @@ func setErr(rsp proto.Message, code uint32, message string) {
 func (server *server) SendMsgAll(c context.Context, req *protobuf.SendMsgAllReq) (rsp *protobuf.SendMsgAllRsp, err error) {
 	rsp = &protobuf.SendMsgAllRsp{}
 
-	// 获取client信息,拨号
-	uo, err := cache.GetUserOnlineInfo(req.GetUserID())
-	if err != nil {
-		logrus.Error("SendMsgAll Failed:", err)
-		return
-	}
-	data := models.GetMsgData(uo.NickName, req.GetSeq(), req.GetCms(), req.GetMsg())
-	websocket.AllSendMessages(req.GetAppID(), req.GetRoomID(), req.GetUserID(), data)
+	websocket.AllSendMessages(req.GetAppID(), req.GetRoomID(), req.GetUserID(), req.GetMsg())
 
 	setErr(rsp, common.OK, "")
 

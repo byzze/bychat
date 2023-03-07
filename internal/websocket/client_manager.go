@@ -178,11 +178,10 @@ func (manager *ClientManager) sendAll(message []byte, roomID, userID uint32, ign
 
 	tmpRoomID := cache.GetChatRoomID(userID)
 	logrus.WithFields(logrus.Fields{
-		"roomID":        roomID,
-		"userID":        userID,
-		"tmpRoomID":     tmpRoomID,
-		"ignoreClient":  ignoreClient.UserID,
-		"ignoreClient1": ignoreClient.AppID,
+		"roomID":       roomID,
+		"userID":       userID,
+		"tmpRoomID":    tmpRoomID,
+		"ignoreClient": ignoreClient.UserID,
 	}).Info("sendAll 发送消息")
 	for _, conn := range clients {
 		if conn != ignoreClient && roomID == tmpRoomID {
@@ -231,8 +230,9 @@ func (manager *ClientManager) EventUnregister(client *Client) {
 
 	if client.UserID != 0 {
 		orderID := helper.GetOrderIDTime()
-		// 更加用户ID查询房间id TODO
-		SendUserMessageAll(client.AppID, roomID, client.UserID, orderID, models.MessageCmdExit, "用户已经离开~")
+		// 根据用户ID查询房间id TODO
+		data := models.GetTextMsgDataExit(userOnline.NickName, orderID, "用户已经离开~")
+		SendUserMessageAll(client.AppID, roomID, client.UserID, data)
 	}
 	client.Socket.Close()
 }

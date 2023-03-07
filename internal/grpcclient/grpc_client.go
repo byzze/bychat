@@ -14,7 +14,7 @@ import (
 )
 
 // SendMsgAll 给全体用户发送消息 link::https://github.com/grpc/grpc-go/blob/master/examples/helloworld/greeter_client/main.go
-func SendMsgAll(server *models.ServerNode, appID, roomID, userID uint32, seq, cmd string, message string) (sendMsgID string, err error) {
+func SendMsgAll(server *models.ServerNode, appID, roomID, userID uint32, message string) (sendMsgID string, err error) {
 	// Set up a connection to the server.
 	conn, err := grpc.Dial(server.String(), grpc.WithInsecure())
 	if err != nil {
@@ -28,11 +28,9 @@ func SendMsgAll(server *models.ServerNode, appID, roomID, userID uint32, seq, cm
 	defer cancel()
 
 	req := protobuf.SendMsgAllReq{
-		Seq:    seq,
 		AppID:  appID,
 		UserID: userID,
 		RoomID: roomID,
-		Cms:    cmd,
 		Msg:    message,
 	}
 	rsp, err := c.SendMsgAll(ctx, &req)

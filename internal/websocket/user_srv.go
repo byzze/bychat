@@ -88,7 +88,7 @@ func GetUserClient(appID, userID uint32) (client *Client) {
 }
 
 // SendUserMessageAll 发送消息 群聊
-func SendUserMessageAll(appID, roomID, userID uint32, msgID, cmd, message string) (sendResults bool, err error) {
+func SendUserMessageAll(appID, roomID, userID uint32, message string) (sendResults bool, err error) {
 	sendResults = true
 	currentTime := uint64(time.Now().Unix())
 
@@ -105,33 +105,13 @@ func SendUserMessageAll(appID, roomID, userID uint32, msgID, cmd, message string
 		"roomID":  roomID,
 		"userID":  userID,
 		"message": message,
-		"cmd":     cmd,
-		"msgID":   msgID,
 	}).Info("SendUserMessageAll")
-
-	uo, err := cache.GetUserOnlineInfo(userID)
-	if err != nil {
-		logrus.Error("给全体用户发消息", err)
-		sendResults = false
-		return
-	}
-	var data string
-
-	switch cmd {
-	case models.MessageCmdEnter:
-		data = models.GetTextMsgDataEnter(uo.NickName, msgID, message)
-	case models.MessageCmdExit:
-		data = models.GetTextMsgDataExit(uo.NickName, msgID, message)
-	default:
-		data = models.GetMsgData(uo.NickName, msgID, cmd, message)
-		cache.ZSetMessage(roomID, data)
-	}
 
 	for _, sv := range servers {
 		if IsLocal(sv) {
-			AllSendMessages(appID, roomID, userID, data)
+			AllSendMessages(appID, roomID, userID, message)
 		} else {
-			_, err := grpcclient.SendMsgAll(sv, appID, roomID, userID, msgID, cmd, message)
+			_, err := grpcclient.SendMsgAll(sv, appID, roomID, userID, message)
 			if err != nil {
 				logrus.Error("grpcclient SendMsgAll 给全体用户发消息", err)
 				sendResults = false
@@ -176,17 +156,21 @@ func EnterChatRoom(appID, roomID, userID uint32) error {
 	if uo == nil {
 		return errors.New("用户未登录")
 	}
+
 	seq := helper.GetOrderIDTime()
-	sendResults, err := SendUserMessageAll(appID, roomID, userID, seq, models.MessageCmdEnter, "哈喽~")
+	data := models.GetTextMsgDataEnter(uo.NickName, seq, "哈喽~")
+
+	cache.SetChatRoomUser(roomID, uo)
+	logrus.Info("EnterChatRoom uo:", uo.ID)
+
+	sendResults, err := SendUserMessageAll(appID, roomID, userID, data)
 	if err != nil {
 		logrus.Error("SendUserMessageAll Failed:", err)
 		return err
 	}
 	if !sendResults {
-		return nil
+		return errors.New("发送失败")
 	}
-	logrus.Info("EnterChatRoom uo:", uo.ID)
-	cache.SetChatRoomUser(roomID, uo)
 	return nil
 }
 
@@ -197,7 +181,17 @@ func ExitChatRoom(appID, roomID, userID uint32) error {
 		"UserId": userID,
 	}).Info("ExitChatRoom")
 	seq := helper.GetOrderIDTime()
-	sendResults, err := SendUserMessageAll(appID, roomID, userID, seq, models.MessageCmdExit, "退出~")
+	uo, err := cache.GetUserOnlineInfo(userID)
+	if err != nil {
+		logrus.Error("EnterChatRoom Failed:", err)
+		return err
+	}
+	if uo == nil {
+		return errors.New("用户未登录")
+	}
+
+	data := models.GetTextMsgDataExit(uo.NickName, seq, "退出~")
+	sendResults, err := SendUserMessageAll(appID, roomID, userID, data)
 	if err != nil {
 		logrus.Error("SendUserMessageAll Failed:", err)
 		return err
