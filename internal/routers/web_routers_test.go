@@ -12,7 +12,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-func InitRedis() {
+func testInitRedis() {
 	viper.SetConfigName("../../config/app")
 	viper.AddConfigPath(".")
 
@@ -24,7 +24,7 @@ func InitRedis() {
 }
 
 func TestRegisterRouter(t *testing.T) {
-	InitRedis()
+	testInitRedis()
 	g := gin.Default()
 	InitWeb(g)
 	w := httptest.NewRecorder()

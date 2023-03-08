@@ -13,12 +13,12 @@ import (
 type DisposeFunc func(client *Client, seq string, message []byte) (code uint32, msg string, data interface{})
 
 var (
-	handlers        = make(map[string]DisposeFunc)
+	handlers        = make(map[models.MessageCmd]DisposeFunc)
 	handlersRWMutex sync.RWMutex
 )
 
 // Register 注册
-func Register(key string, value DisposeFunc) {
+func Register(key models.MessageCmd, value DisposeFunc) {
 	handlersRWMutex.Lock()
 	defer handlersRWMutex.Unlock()
 	handlers[key] = value
@@ -26,7 +26,7 @@ func Register(key string, value DisposeFunc) {
 	return
 }
 
-func getHandlers(key string) (value DisposeFunc, ok bool) {
+func getHandlers(key models.MessageCmd) (value DisposeFunc, ok bool) {
 	handlersRWMutex.RLock()
 	defer handlersRWMutex.RUnlock()
 
@@ -54,8 +54,8 @@ func ProcessData(c *Client, message []byte) {
 		return
 	}
 
-	seq := req.Seq
-	cmd := req.Cmd
+	seq := req.MsgSeq
+	cmd := models.MessageCmd(req.Cmd)
 
 	var (
 		code uint32
@@ -75,7 +75,7 @@ func ProcessData(c *Client, message []byte) {
 
 	msg = common.GetErrorMessage(code, msg)
 
-	responseHead := models.NewResponseHead(seq, cmd, code, msg, data)
+	responseHead := models.NewResponse(seq, code, msg, data, cmd)
 
 	headByte, err := json.Marshal(responseHead)
 	if err != nil {

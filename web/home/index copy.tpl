@@ -447,7 +447,7 @@
                     /* var data = {
                              roomID: roomID,
                              userID: person,
-                             msgID: sendID(),
+                             msgSeq: sendID(),
                              message: msg,
                              cmd: "msg",
                          }
@@ -461,7 +461,7 @@
                         data: {
                             roomID: roomID,
                             userID: person,
-                            msgID: sendID(),
+                            msgSeq: sendID(),
                             message: msg,
                         },
                         contentType: "application/x-www-form-urlencoded",

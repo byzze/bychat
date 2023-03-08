@@ -19,17 +19,9 @@ func Login(appID, userID uint32, nickName string) error {
 	}).Info("webSocket_request 登录")
 
 	currentTime := uint64(time.Now().Unix())
-
-	var user = models.UserOnline{
-		ID:            userID,
-		NickName:      nickName,
-		LoginTime:     currentTime,
-		HeartbeatTime: 0,
-		LogOutTime:    0,
-		DeviceInfo:    "",
-		IsLogoff:      false,
-	}
-	return cache.SetUserOnlineInfo(userID, &user)
+	// TODO 数据库，数据校验
+	var user = models.UserLogin(appID, userID, "", "", nickName, "", currentTime)
+	return cache.SetUserOnlineInfo(userID, user)
 }
 
 // LogOut 退出
@@ -111,7 +103,7 @@ func SendUserMessageAll(appID, roomID, userID uint32, message string) (sendResul
 		if IsLocal(sv) {
 			AllSendMessages(appID, roomID, userID, message)
 		} else {
-			_, err := grpcclient.SendMsgAll(sv, appID, roomID, userID, message)
+			err := grpcclient.SendMsgAll(sv, appID, roomID, userID, message)
 			if err != nil {
 				logrus.Error("grpcclient SendMsgAll 给全体用户发消息", err)
 				sendResults = false
@@ -131,46 +123,50 @@ func AllSendMessages(appID, roomID, userID uint32, data string) {
 		"data":   data,
 	}).Info("AllSendMessages")
 
-	// 获取userId对应的client，用于过滤
-	ignoreClient := clientManager.GetUserClient(appID, userID)
-	if ignoreClient == nil {
-		logrus.Error("AllSendMessages")
-		return
-	}
 	// 发送数据给房间所有人
-	clientManager.sendAll([]byte(data), roomID, userID, ignoreClient)
+	clientManager.sendAll([]byte(data), appID, roomID, userID)
 }
 
 // EnterChatRoom 进入房间
 func EnterChatRoom(appID, roomID, userID uint32) error {
+	// 记录函数名称和请求参数
 	logrus.WithFields(logrus.Fields{
-		"AppId":  appID,
-		"UserId": userID,
-		"RoomID": roomID,
-	}).Info("EnterChatRoom")
+		"function": "EnterChatRoom",
+		"appID":    appID,
+		"roomID":   roomID,
+		"userID":   userID,
+	}).Info("EnterChatRoom called")
+
+	// 获取用户在线信息
 	uo, err := cache.GetUserOnlineInfo(userID)
 	if err != nil {
-		logrus.Error("EnterChatRoom Failed:", err)
+		logrus.WithError(err).Error("EnterChatRoom: failed to get user online info")
 		return err
 	}
+
 	if uo == nil {
-		return errors.New("用户未登录")
+		return errors.New("user is not online")
 	}
 
 	seq := helper.GetOrderIDTime()
-	data := models.GetTextMsgDataEnter(uo.NickName, seq, "哈喽~")
 
 	cache.SetChatRoomUser(roomID, uo)
-	logrus.Info("EnterChatRoom uo:", uo.ID)
 
+	data := models.GetTextMsgDataEnter(uo.NickName, "", seq, "哈喽~")
+
+	// 记录消息序列号并发送消息
+	logrus.WithFields(logrus.Fields{
+		"seq": seq,
+	}).Info("EnterChatRoom: message sent")
 	sendResults, err := SendUserMessageAll(appID, roomID, userID, data)
 	if err != nil {
-		logrus.Error("SendUserMessageAll Failed:", err)
+		logrus.WithError(err).Error("EnterChatRoom: failed to send message")
 		return err
 	}
 	if !sendResults {
-		return errors.New("发送失败")
+		return errors.New("failed to send message")
 	}
+
 	return nil
 }
 
@@ -180,26 +176,29 @@ func ExitChatRoom(appID, roomID, userID uint32) error {
 		"AppId":  appID,
 		"UserId": userID,
 	}).Info("ExitChatRoom")
-	seq := helper.GetOrderIDTime()
+
 	uo, err := cache.GetUserOnlineInfo(userID)
 	if err != nil {
-		logrus.Error("EnterChatRoom Failed:", err)
+		logrus.WithError(err).Error("EnterChatRoom Failed")
 		return err
 	}
 	if uo == nil {
-		return errors.New("用户未登录")
+		return errors.New("user is not online")
 	}
 
-	data := models.GetTextMsgDataExit(uo.NickName, seq, "退出~")
+	seq := helper.GetOrderIDTime()
+	data := models.GetTextMsgDataExit(uo.NickName, "", seq, "退出~")
+
+	cache.DelChatRoomUser(roomID, userID)
+
 	sendResults, err := SendUserMessageAll(appID, roomID, userID, data)
 	if err != nil {
-		logrus.Error("SendUserMessageAll Failed:", err)
+		logrus.WithError(err).Error("ExitChatRoom: SendUserMessageAll Failed")
 		return err
 	}
 	if !sendResults {
-		return nil
+		return errors.New("failed to send message")
 	}
 
-	cache.DelChatRoomUser(roomID, userID)
 	return nil
 }

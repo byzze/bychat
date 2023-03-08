@@ -25,33 +25,29 @@ message ResponUserOnline {
 
 // 发送消息
 message SendMsgReq {
-    string seq = 1; // 序列号
-    uint32 appID = 2; // appID
-    uint32 roomID = 3; // 房间Id
-    uint32 userID = 4; // 用户ID
-    string msg = 5; // msg
-    bool isLocal = 6; // 是否查询本机 acc内部调用为:true(本机查询不到即结束)
+    uint32 appID = 1; // appID
+    uint32 roomID = 2; // 房间Id
+    uint32 userID = 3; // 用户ID
+    string data = 4; // msg
+    bool isLocal = 5; // 是否查询本机 acc内部调用为:true(本机查询不到即结束)
 }
 
 message SendMsgRsp {
     uint32 retCode = 1;
     string errMsg = 2;
-    string sendMsgID = 3;
 }
 
 // 给这台机器的房间内所有用户发送消息
 message SendMsgAllReq {
-    string seq = 1; // 序列号
-    uint32 appID = 2; // appID
-    uint32 roomID = 3; // 房间Id
-    uint32 userID = 4; // 不发送的用户ID
-    string msg = 5; // msg
+    uint32 appID = 1; // appID
+    uint32 roomID = 2; // 房间Id
+    uint32 userID = 3; // 不发送的用户ID
+    string data = 4; // data
 }
 
 message SendMsgAllRsp {
     uint32 retCode = 1;
     string errMsg = 2;
-    string sendMsgID = 3;
 }
 
 // 获取用户列表

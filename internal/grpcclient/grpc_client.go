@@ -14,7 +14,13 @@ import (
 )
 
 // SendMsgAll 给全体用户发送消息 link::https://github.com/grpc/grpc-go/blob/master/examples/helloworld/greeter_client/main.go
-func SendMsgAll(server *models.ServerNode, appID, roomID, userID uint32, message string) (sendMsgID string, err error) {
+func SendMsgAll(server *models.ServerNode, appID, roomID, userID uint32, message string) (err error) {
+	logrus.WithFields(logrus.Fields{
+		"appID":   appID,
+		"roomID":  roomID,
+		"userID":  userID,
+		"message": message,
+	}).Info("grpc client SendMsgAll")
 	// Set up a connection to the server.
 	conn, err := grpc.Dial(server.String(), grpc.WithInsecure())
 	if err != nil {
@@ -31,7 +37,7 @@ func SendMsgAll(server *models.ServerNode, appID, roomID, userID uint32, message
 		AppID:  appID,
 		UserID: userID,
 		RoomID: roomID,
-		Msg:    message,
+		Data:   message,
 	}
 	rsp, err := c.SendMsgAll(ctx, &req)
 	if err != nil {
@@ -46,9 +52,7 @@ func SendMsgAll(server *models.ServerNode, appID, roomID, userID uint32, message
 		return
 	}
 
-	sendMsgID = rsp.GetSendMsgID()
-	logrus.Error("给全体用户发送消息 成功:", sendMsgID)
-
+	logrus.Info("给全体用户发送消息 成功")
 	return
 }
 

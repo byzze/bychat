@@ -19,7 +19,7 @@ import (
 
 const (
 	userOnlinePrefix    = "acc:user:online:" // 用户在线状态
-	userOnlineCacheTime = 24 * 60 * 60
+	userOnlineCacheTime = 5 * 60             //TODO24 * 60 * 60
 )
 
 /*********************  查询用户是否在线  ************************/

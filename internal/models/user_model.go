@@ -39,15 +39,20 @@ type ResponseUserOnline struct {
 /**********************  数据处理  *********************************/
 
 // UserLogin 用户登录
-// func UserLogin(accIP, accPort string, appID uint32, nickName string, addr string, loginTime uint64) (userOnline *UserOnline) {
-// 	userOnline = &UserOnline{
-// 		NickName:      nickName,
-// 		LoginTime:     loginTime,
-// 		HeartbeatTime: loginTime,
-// 		IsLogoff:      false,
-// 	}
-// 	return
-// }
+func UserLogin(appID, userID uint32, accIP, accPort string, nickName string, addr string, loginTime uint64) (userOnline *UserOnline) {
+	userOnline = &UserOnline{
+		ID:            userID,
+		NickName:      nickName,
+		Avatar:        "",
+		Addr:          "",
+		LoginTime:     loginTime,
+		HeartbeatTime: 0,
+		LogOutTime:    0,
+		DeviceInfo:    "",
+		IsLogoff:      false,
+	}
+	return
+}
 
 // Heartbeat 用户心跳
 func (u *UserOnline) Heartbeat(currentTime uint64) {

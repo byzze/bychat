@@ -13,36 +13,41 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// Param 参数
-type Param struct {
+// CommonParam 公共参数
+type CommonParam struct {
 	ID       uint32 `json:"id"`
 	NickName string `json:"nickname"`
-	AppID    uint32 `form:"appID" json:"appID"  binding:"-"`
-	RoomID   uint32 `form:"roomID" json:"roomID"  binding:"-"`
-	UserID   uint32 `form:"userID" json:"userID" `
-	Start    int64  `form:"start"`
-	Limit    int64  `form:"limit"`
-
-	MsgID       string `json:"msgID"`
-	MessageType string `json:"messageType"`
-	TextParam
-	ImgParam
+	AppID    uint32 `json:"appID" form:"appID"`
+	RoomID   uint32 `json:"roomID" form:"roomID"`
+	UserID   uint32 `json:"userID" form:"userID" `
 }
 
-type TextParam struct {
-	Message string `json:"message"`
+// HistoryMessageParam 历史消息参数
+type HistoryMessageParam struct {
+	CommonParam
+	Start int64 `form:"start"`
+	Limit int64 `form:"limit"`
 }
 
-type ImgParam struct {
-	URL  string `json:"url"`
-	Name string `json:"name"`
-	Size int64  `json:"size"`
+// SendMessageParam 发送消息参数
+type SendMessageParam struct {
+	CommonParam
+	MsgSeq     string `json:"msgSeq"`
+	MsgType    string `json:"msgType"`
+	MsgContent string `json:"msgContent"`
+	URL        string `json:"url"`
+	Name       string `json:"name"`
+	Format     string `json:"Format"`
+	Size       int64  `json:"size"`
+	Second     int32  `json:"second"`
+	Width      int32  `json:"width"`
+	Height     int32  `json:"height"`
 }
 
 // Login 登录
 func Login(ctx *gin.Context) {
 	data := make(map[string]interface{})
-	var param Param
+	var param CommonParam
 	if err := ctx.BindJSON(&param); err != nil {
 		logrus.Error("websocket Login BindJSON:", err)
 		base.Response(ctx, common.ParameterIllegal, "", data)
@@ -67,7 +72,7 @@ func Login(ctx *gin.Context) {
 
 // LogOut 退出
 func LogOut(ctx *gin.Context) {
-	var param Param
+	var param CommonParam
 	if err := ctx.BindJSON(&param); err != nil {
 		logrus.Error("websocket Login BindJSON:", err)
 		base.Response(ctx, common.ParameterIllegal, "", nil)
@@ -83,7 +88,7 @@ func LogOut(ctx *gin.Context) {
 func GetRoomUserList(ctx *gin.Context) {
 	data := make(map[string]interface{})
 
-	var param Param
+	var param CommonParam
 	if err := ctx.BindQuery(&param); err != nil {
 		logrus.Error("websocket GetRoomUserList:", err)
 		base.Response(ctx, common.ParameterIllegal, "", nil)
@@ -112,7 +117,7 @@ func GetRoomUserList(ctx *gin.Context) {
 func SendMessageAll(ctx *gin.Context) {
 	data := make(map[string]interface{})
 
-	var param Param
+	var param SendMessageParam
 	if err := ctx.BindJSON(&param); err != nil {
 		logrus.Error("websocket SendMessageAll:", err)
 		base.Response(ctx, common.ParameterIllegal, "", nil)
@@ -124,15 +129,15 @@ func SendMessageAll(ctx *gin.Context) {
 	}
 
 	logrus.WithFields(logrus.Fields{
-		"roomID":      param.RoomID,
-		"userID":      param.UserID,
-		"msgID":       param.MsgID,
-		"message":     param.Message,
-		"messageType": param.MessageType,
+		"roomID":         param.RoomID,
+		"userID":         param.UserID,
+		"msgSeq":         param.MsgSeq,
+		"messageContetn": param.MsgContent,
+		"messageType":    param.MsgType,
 	}).Info("SendMessageAll Param")
 
-	if cache.SeqDuplicates(param.MsgID) {
-		logrus.Info("数据重复：", param.MsgID)
+	if cache.SeqDuplicates(param.MsgSeq) {
+		logrus.Info("数据重复：", param.MsgSeq)
 		base.Response(ctx, common.OK, "", data)
 		return
 	}
@@ -141,13 +146,25 @@ func SendMessageAll(ctx *gin.Context) {
 		logrus.Error("给全体用户发消息", err)
 		return
 	}
+
 	var message string
-	switch param.MessageType {
+	msgType := models.MessageType(param.MsgType)
+	switch msgType {
 	case models.MessageTypeText:
-		message = models.GetTextMsgData(uo.NickName, param.MsgID, param.Message)
+		message = models.GetTextMsgData(uo.NickName, "", param.MsgSeq, param.MsgContent)
 	case models.MessageTypeImg:
-		message = models.GetImgMsgData(uo.NickName, param.MsgID, param.URL, param.NickName, param.Size)
+		message = models.GetImgMsgData(uo.NickName, "", param.MsgSeq, param.URL, param.Name, param.Size, param.Width, param.Height)
+	case models.MessageTypeFile:
+		message = models.GetFileMsgData(uo.NickName, "", param.MsgSeq, param.URL, param.Name, param.Size)
+	case models.MessageTypeVedio:
+		message = models.GetVedioMsgData(uo.NickName, "", param.MsgSeq, param.URL, param.Name, param.Format, param.Size, param.Second)
+	case models.MessageTypeSound:
+		message = models.GetSoundMsgData(uo.NickName, "", param.MsgSeq, param.URL, param.Size, param.Second)
+	default:
+		base.Response(ctx, common.ParameterIllegal, "未知数据格式", data)
+		return
 	}
+
 	// 缓存聊天数据
 	cache.ZSetMessage(param.RoomID, message)
 
@@ -165,7 +182,8 @@ func SendMessageAll(ctx *gin.Context) {
 
 // HistoryMessageList 获取聊天消息
 func HistoryMessageList(ctx *gin.Context) {
-	var param Param
+	var param HistoryMessageParam
+
 	data := make(map[string]interface{})
 
 	if err := ctx.BindQuery(&param); err != nil {
@@ -193,7 +211,7 @@ func HistoryMessageList(ctx *gin.Context) {
 
 // EnterChatRoom 进入房间
 func EnterChatRoom(ctx *gin.Context) {
-	var param Param
+	var param CommonParam
 
 	if err := ctx.BindJSON(&param); err != nil {
 		logrus.Error("EnterChatRoom Param Failed", err)
@@ -218,7 +236,7 @@ func EnterChatRoom(ctx *gin.Context) {
 
 // ExitChatRoom 离开房间
 func ExitChatRoom(ctx *gin.Context) {
-	var param Param
+	var param CommonParam
 
 	if err := ctx.BindJSON(&param); err != nil {
 		logrus.Error("EnterChatRoom Param Failed", err)

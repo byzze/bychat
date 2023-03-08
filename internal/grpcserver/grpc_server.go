@@ -39,9 +39,15 @@ func setErr(rsp proto.Message, code uint32, message string) {
 }
 
 func (server *server) SendMsgAll(c context.Context, req *protobuf.SendMsgAllReq) (rsp *protobuf.SendMsgAllRsp, err error) {
+	logrus.WithFields(logrus.Fields{
+		"appID":  req.GetAppID(),
+		"roomID": req.GetRoomID(),
+		"userID": req.GetUserID(),
+		"data":   req.GetData(),
+	}).Info("grpc_response SendMsgAll 给本机全体用户发消息")
 	rsp = &protobuf.SendMsgAllRsp{}
 
-	websocket.AllSendMessages(req.GetAppID(), req.GetRoomID(), req.GetUserID(), req.GetMsg())
+	websocket.AllSendMessages(req.GetAppID(), req.GetRoomID(), req.GetUserID(), req.GetData())
 
 	setErr(rsp, common.OK, "")
 
