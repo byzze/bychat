@@ -1,0 +1,20 @@
+config:
+  name: "charts delete"
+  verify: False
+  decscriptions: ''
+  variables:
+    baseurl: http://localhost:8080
+teststeps:
+-
+  request:
+    method: POST
+    url: ${baseurl}/upload/file
+    headers:
+      Content-Type:  multipart/form-data
+    upload: 
+     file: "@./settings.json"
+  validate:
+    - eq: ["status_code", 200]
+    - eq: ["body.message", "操作成功"]
+
+
