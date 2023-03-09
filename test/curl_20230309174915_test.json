@@ -1,0 +1,20 @@
+{
+    "config": {
+        "name": "testcase converted from curl command"
+    },
+    "teststeps": [
+        {
+            "name": "curl -X \"POST\" \"http://localhost:8080/upload/file\" -F \"file=@./text.txt\" -H \"Content-Type: multipart/form-data\"",
+            "request": {
+                "method": "POST",
+                "url": "http://localhost:8080/upload/file",
+                "headers": {
+                    "Content-Type": "multipart/form-data"
+                },
+                "upload": {
+                    "file": "@./text.txt"
+                }
+            }
+        }
+    ]
+}

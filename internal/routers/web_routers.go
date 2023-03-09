@@ -1,6 +1,7 @@
 package routers
 
 import (
+	"bychat/api/v1/fileserver"
 	"bychat/api/v1/home"
 	"bychat/api/v1/systems"
 	"bychat/api/v1/user"
@@ -36,5 +37,11 @@ func InitWeb(router *gin.Engine) {
 	homeRouter := router.Group("/home")
 	{
 		homeRouter.GET("/index", home.Index)
+	}
+	// file
+	file := router.Group("/upload")
+	router.MaxMultipartMemory = 8 << 20 // 8 MiB
+	{
+		file.POST("/file", fileserver.UploadFile)
 	}
 }
