@@ -1,14 +1,17 @@
 package user
 
 import (
+	"fmt"
 	"testing"
-
-	"github.com/sirupsen/logrus"
 )
 
 func TestXxx(t *testing.T) {
-	logrus.SetReportCaller(true)
-	logrus.WithFields(logrus.Fields{
-		"param": "param",
-	}).Info("定时任务，清理超时连接")
+	dst := "sda"
+	tokenFileName := "sda"
+	dst = fmt.Sprintf(dst+"%s", tokenFileName)
+	fmt.Println(dst)
+	// logrus.SetReportCaller(true)
+	// logrus.WithFields(logrus.Fields{
+	// 	"param": "param",
+	// }).Info("定时任务，清理超时连接")
 }

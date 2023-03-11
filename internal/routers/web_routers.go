@@ -5,6 +5,7 @@ import (
 	"bychat/api/v1/home"
 	"bychat/api/v1/systems"
 	"bychat/api/v1/user"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
@@ -44,4 +45,5 @@ func InitWeb(router *gin.Engine) {
 	{
 		file.POST("/file", fileserver.UploadFile)
 	}
+	router.StaticFS("/fileserver/bychat", http.Dir("./api/v1/fileserver/bychat"))
 }

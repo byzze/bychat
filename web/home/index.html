@@ -257,6 +257,11 @@
                 </form>
                 <input type="button" name="button" value="img" onclick="sendMsg('img')" />
                 <input type="button" name="button" value="vedio" onclick="sendMsg('vedio')" />
+                <!-- HTML部分 -->
+                <form id="uploadForm" enctype="multipart/form-data">
+                    <input type="file" name="file" id="file">
+                    <button type="button" id="submit">上传</button>
+                </form>
             </div>
         </div>
         <div class="room-list">
@@ -510,67 +515,127 @@
                     }
                 });
             }
+            $("#submit").click(function () {
+                // 创建一个FormData对象，用于封装文件数据
+                var formData = new FormData($("#uploadForm")[0]);
+                formData.append("fileType", "file")
+                // 使用ajax发送请求
+                $.ajax({
+                    url: 'http://{{ .httpUrl }}/upload/file', // 上传文件的后台处理地址
+                    type: "POST", // 请求方式
+                    data: formData, // 请求数据
+                    cache: false, // 不缓存
+                    processData: false, // 不处理数据
+                    contentType: false, // 不设置内容类型
+                    success: function (data) { // 请求成功的回调函数
+                        console.log("======", data); // 弹出返回的信息，例如“上传成功”
+                        if (data.code == 0) {
+                            alert("上传成功")
+                            sendMsg(data.data.fileType, data.data.token, data.data.name, data.data.size)
+                        } else {
+                            alert("上传失败")
+                        }
+                    },
+                    error: function () { // 请求失败的回调函数
+                        alert("上传失败");
+                    }
+                });
+            });
 
-            function sendMsg(type) {
+            function msgImg() {
+                param = {
+                    msgType: "img",
+                    userID: person.id,
+                    roomID: roomID,
+                    msgSeq: sendID(),
+                    appID: appID,
+                    url: "https://th.bing.com/th/id/OIP.7KW5GT7NQ8yUGlBbCHEm0gHaNK?pid=ImgDet&rs=1",
+                    width: 200,
+                    height: 200,
+                    name: "p1",
+                    size: 10,
+                }
+                return param
+            }
+
+            function msgText(msg) {
+                param = {
+                    msgType: "text",
+                    userID: person.id,
+                    roomID: roomID,
+                    msgSeq: sendID(),
+                    msgContent: msg,
+                    appID: appID,
+                }
+                return param
+            }
+
+            function msgVedio() {
+                param = {
+                    msgType: "vedio",
+                    userID: person.id,
+                    roomID: roomID,
+                    msgSeq: sendID(),
+                    appID: appID,
+                    format: ".mp4",
+                    url: "localhost.com.com",
+                    name: "p2",
+                    size: 10,
+                    second: 10,
+                }
+                return param
+            }
+
+            function msgFile(url, name, size) {
+                param = {
+                    msgType: "file",
+                    userID: person.id,
+                    roomID: roomID,
+                    msgSeq: sendID(),
+                    appID: appID,
+                    url: url,
+                    name: name,
+                    size: size,
+                }
+                return param
+            }
+
+            function sendMsg(type, url, name, size) {
+                console.log("sendMsg message", type, url, name)
                 let msg = $("input[name='msg']").val()
                 console.log("button 点击:" + msg);
                 console.log("button type点击:" + type);
-                if (msg !== "") {
-                    param = ""
-                    if (type == "text") {
-                        param = {
-                            msgType: "text",
-                            userID: person.id,
-                            roomID: roomID,
-                            msgSeq: sendID(),
-                            msgContent: msg,
-                            appID: appID,
-                        }
-                    }
-                    if (type == "img") {
-                        param = {
-                            msgType: "img",
-                            userID: person.id,
-                            roomID: roomID,
-                            msgSeq: sendID(),
-                            appID: appID,
-                            url: "https://th.bing.com/th/id/OIP.7KW5GT7NQ8yUGlBbCHEm0gHaNK?pid=ImgDet&rs=1",
-                            width: 200,
-                            height: 200,
-                            name: "p1",
-                            size: 10,
-                        }
-                    }
 
-                    if (type == "vedio") {
-                        param = {
-                            msgType: "vedio",
-                            userID: person.id,
-                            roomID: roomID,
-                            msgSeq: sendID(),
-                            appID: appID,
-                            format: ".mp4",
-                            url: "localhost.com.com",
-                            name: "p2",
-                            size: 10,
-                            second: 10,
-                        }
-                    }
-
-                    $.ajax({
-                        type: "POST",
-                        url: 'http://{{ .httpUrl }}/user/sendMessageAll',
-                        data: JSON.stringify(param),
-                        contentType: "application/x-www-form-urlencoded",
-                        success: function (data) {
-                            console.log(data);
-                            addChatWith(myMsg(person.name, msg))
-                            $("input[name='msg']").val("");
-                        }
-                    });
+                if (type == "text") {
+                    param = msgText(msg)
                 }
+
+                if (type == "img") {
+                    param = msgImg()
+                }
+
+                if (type == "vedio") {
+                    param = msgVedio()
+                }
+
+                if (type == "file") {
+                    param = msgFile(url, name, size)
+                }
+
+                msg = JSON.stringify(param)
+                $.ajax({
+                    type: "POST",
+                    url: 'http://{{ .httpUrl }}/user/sendMessageAll',
+                    data: JSON.stringify(param),
+                    contentType: "application/x-www-form-urlencoded",
+                    success: function (data) {
+                        console.log(data);
+                        addChatWith(myMsg(person.name, msg))
+                        $("input[name='msg']").val("");
+                    }
+                });
             }
-            var mapUser = new Map();
+
             function getUserList() {
                 $(".personnel-list-ul").html("");
                 $.ajax({
@@ -586,8 +651,6 @@
                         //i表示在data中的索引位置，n表示包含的信息的对象
                         $.each(data.data.userList, function (i, n) {
                             //获取对象中属性为optionsValue的值
-                            console.log(n)
-                            mapUser.set(n.nickName, n.ID)
                             let name = n.nickName
                             if (n == person.name) {
                                 name = name + "(自己)"

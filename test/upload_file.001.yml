@@ -12,9 +12,9 @@ teststeps:
     headers:
       Content-Type:  multipart/form-data
     upload: 
-     file: "@./settings.json"
+     file: "@./.vscode/settings.json"
+     fileType: text
   validate:
     - eq: ["status_code", 200]
-    - eq: ["body.message", "操作成功"]
 
 

@@ -85,11 +85,6 @@ func Heartbeat(client *Client, seq string, message []byte) (code uint32, msg str
 		}
 		return
 	}
-	if userOnline.IsOnline() {
-		logrus.Info("user is not online")
-		unregisterChannel(client)
-		return
-	}
 
 	client.Heartbeat(currentTime)
 	userOnline.Heartbeat(currentTime)
