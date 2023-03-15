@@ -152,13 +152,13 @@ func SendMessageAll(ctx *gin.Context) {
 	switch msgType {
 	case models.MessageTypeText:
 		message = models.GetTextMsgData(uo.NickName, "", param.MsgSeq, param.MsgContent)
-	case models.MessageTypeImg:
+	case models.MessageTypeImage:
 		message = models.GetImgMsgData(uo.NickName, "", param.MsgSeq, param.URL, param.Name, param.Size, param.Width, param.Height)
 	case models.MessageTypeFile:
 		message = models.GetFileMsgData(uo.NickName, "", param.MsgSeq, param.URL, param.Name, param.Size)
 	case models.MessageTypeVedio:
 		message = models.GetVedioMsgData(uo.NickName, "", param.MsgSeq, param.URL, param.Name, param.Format, param.Size, param.Second)
-	case models.MessageTypeSound:
+	case models.MessageTypeAudio:
 		message = models.GetSoundMsgData(uo.NickName, "", param.MsgSeq, param.URL, param.Size, param.Second)
 	default:
 		base.Response(ctx, common.ParameterIllegal, "未知数据格式", data)

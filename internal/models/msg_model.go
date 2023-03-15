@@ -10,10 +10,10 @@ type MessageType string
 // 消息类型
 const (
 	MessageTypeText  MessageType = "text"
-	MessageTypeImg   MessageType = "img"
+	MessageTypeImage MessageType = "image"
 	MessageTypeVedio MessageType = "vedio"
 	MessageTypeFile  MessageType = "file"
-	MessageTypeSound MessageType = "sound"
+	MessageTypeAudio MessageType = "audio"
 )
 
 // MessageCmd 消息命令枚举
@@ -38,7 +38,7 @@ type Message struct {
 
 // MsgBody 消息体的定义
 type MsgBody struct {
-	MsgType    MessageType `json:"msgType"`    // 消息类型 text/img/
+	MsgType    MessageType `json:"msgType"`    // 消息类型 text/image/
 	MsgContent interface{} `json:"msgContent"` // 消息内容 文本，图像，视频，音频，文件 TextMessage ImgMessage VideoMessage SoundMessage FileMessage
 }
 
@@ -97,7 +97,7 @@ func NewTextMsgBody(text string) (msgBody *MsgBody) {
 // NewImgMsgNody 图片消息
 func NewImgMsgNody(url, name string, size int64, width, height int32) (msgBody *MsgBody) {
 	msgBody = &MsgBody{
-		MsgType: MessageTypeImg,
+		MsgType: MessageTypeImage,
 		MsgContent: ImgMessage{
 			URL:    url,
 			Name:   name,
@@ -127,7 +127,7 @@ func NewVedioMsgBody(url, name, format string, size int64, second int32) (msgBod
 // NewSoundMsgBody 音频消息
 func NewSoundMsgBody(url string, size int64, second int32) (msgBody *MsgBody) {
 	msgBody = &MsgBody{
-		MsgType: MessageTypeSound,
+		MsgType: MessageTypeAudio,
 		MsgContent: SoundMessage{
 			URL:    url,
 			Size:   size,

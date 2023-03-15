@@ -255,7 +255,7 @@
                     <input type="text" name="msg" placeholder="你想要发送的消息" value="" size="35" />
                     <input type="button" name="button" value="text" onclick="sendMsg('text')" />
                 </form>
-                <input type="button" name="button" value="img" onclick="sendMsg('img')" />
+                <input type="button" name="button" value="img" onclick="sendMsg('imgage')" />
                 <input type="button" name="button" value="vedio" onclick="sendMsg('vedio')" />
                 <!-- HTML部分 -->
                 <form id="uploadForm" enctype="multipart/form-data">
@@ -515,11 +515,48 @@
                     }
                 });
             }
-            $("#submit").click(function () {
-                // 创建一个FormData对象，用于封装文件数据
-                var formData = new FormData($("#uploadForm")[0]);
-                formData.append("fileType", "file")
-                // 使用ajax发送请求
+
+            function GetFileType() {
+
+            }
+            function handleFileUpload(files) {
+                console.log("====", files)
+                //TODO 上传一个
+                const formData = new FormData();
+                formData.append('file', files[0]);
+                const fileType = files[0].type;
+                // for (let i = 0; i < files.length; i++) {
+                //     const file = files[i];
+                //     formData.append('file', file);
+                //     const fileType = file.type;
+                //     const fileName = file.name;
+                //     const fileExtension = fileName.split('.').pop();
+                //     if (fileType.startsWith('image/')) {
+                //         // Handle image file
+                //         console.log('Image file uploaded:', fileName);
+                //     } else if (fileType.startsWith('video/')) {
+                //         // Handle video file
+                //         console.log('Video file uploaded:', fileName);
+                //     } else if (fileType.startsWith('audio/')) {
+                //         // Handle audio file
+                //         console.log('Audio file uploaded:', fileName);
+                //     } else {
+                //         // Handle other file types
+                //         console.log('File uploaded:', fileName);
+                //     }
+                // }
+                var filetype = ""
+                if (fileType.startsWith('image/')) {
+                    filetype = "image"
+                } else if (fileType.startsWith('video/')) {
+                    filetype = "video"
+                } else if (fileType.startsWith('audio/')) {
+                    filetype = "audio"
+                } else {
+                    filetype = "file"
+                }
+                formData.append("fileType", filetype)
+
                 $.ajax({
                     url: 'http://{{ .httpUrl }}/upload/file', // 上传文件的后台处理地址
                     type: "POST", // 请求方式
@@ -531,7 +568,7 @@
                         console.log("======", data); // 弹出返回的信息，例如“上传成功”
                         if (data.code == 0) {
                             alert("上传成功")
-                            sendMsg(data.data.fileType, data.data.token, data.data.name, data.data.size)
+                            formatData(data.data.fileType, data.data.name, data.data.url, data.data.size, data.data.width, data.data.height)
                         } else {
                             alert("上传失败")
                         }
@@ -540,20 +577,26 @@
                         alert("上传失败");
                     }
                 });
+            }
+
+            $("#submit").click(function (event) {
+                event.preventDefault();
+                const fileInput = $('input[type="file"]');
+                handleFileUpload(fileInput[0].files);
             });
 
-            function msgImg() {
+            function msgImg(type, name, url, size, width, height) {
                 param = {
-                    msgType: "img",
+                    msgType: type,
                     userID: person.id,
                     roomID: roomID,
                     msgSeq: sendID(),
                     appID: appID,
-                    url: "https://th.bing.com/th/id/OIP.7KW5GT7NQ8yUGlBbCHEm0gHaNK?pid=ImgDet&rs=1",
-                    width: 200,
-                    height: 200,
-                    name: "p1",
-                    size: 10,
+                    url: url,
+                    width: width,
+                    height: height,
+                    name: name,
+                    size: size,
                 }
                 return param
             }
@@ -600,7 +643,7 @@
                 return param
             }
 
-            function sendMsg(type, url, name, size) {
+            function formatData(type, name, url, size, width, height) {
                 console.log("sendMsg message", type, url, name)
                 let msg = $("input[name='msg']").val()
                 console.log("button 点击:" + msg);
@@ -609,20 +652,19 @@
                 if (type == "text") {
                     param = msgText(msg)
                 }
-
-                if (type == "img") {
-                    param = msgImg()
+                if (type == "image") {
+                    param = msgImg(type, name, url, size, width, height)
                 }
-
                 if (type == "vedio") {
                     param = msgVedio()
                 }
-
                 if (type == "file") {
                     param = msgFile(url, name, size)
                 }
-
                 msg = JSON.stringify(param)
+                sendMsg(msg)
+            }
+            function sendMsg(msg) {
                 $.ajax({
                     type: "POST",
                     url: 'http://{{ .httpUrl }}/user/sendMessageAll',
