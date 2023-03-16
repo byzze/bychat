@@ -5,6 +5,10 @@ import (
 	"bychat/internal/common"
 	"bychat/internal/models"
 	"fmt"
+	"image"
+	_ "image/gif"
+	_ "image/jpeg"
+	_ "image/png"
 	"path/filepath"
 	"time"
 
@@ -28,25 +32,20 @@ func UploadFile(c *gin.Context) {
 	}
 	defer file.Close()
 
-	var resUrl string
+	var resURL string
 	messageFileType := models.MessageType(fileType)
 	switch messageFileType {
 	case models.MessageTypeImage:
-		// // Check if the file is an image
-		// if !strings.HasPrefix(h.Header.Get("Content-Type"), "image/") {
-		// 	c.String(http.StatusBadRequest, "Bad request")
-		// 	return
-		// }
-		// config, _, err := image.DecodeConfig(file)
-		// if err != nil {
-		// 	base.Response(c, common.ParameterIllegal, err.Error(), nil)
-		// 	return
-		// }
+		config, _, err := image.DecodeConfig(file)
+		if err != nil {
+			base.Response(c, common.ParameterIllegal, err.Error(), nil)
+			return
+		}
 
-		// width, height := config.Width, config.Height
-		// data["width"] = width
-		// data["height"] = height
-		resUrl = "/fileserver/bychat/" + fileType
+		width, height := config.Width, config.Height
+		data["width"] = width
+		data["height"] = height
+		resURL = "/fileserver/bychat/" + fileType
 		dst = fmt.Sprintf(dst, fileType)
 	case models.MessageTypeFile, models.MessageTypeVedio, models.MessageTypeAudio:
 		dst = fmt.Sprintf(dst, fileType)
@@ -70,6 +69,6 @@ func UploadFile(c *gin.Context) {
 	data["name"] = fileName
 	data["size"] = size
 	data["fileType"] = fileType
-	data["url"] = fmt.Sprintf("%s/%s", resUrl, tokenExtName)
+	data["url"] = fmt.Sprintf("%s/%s", resURL, tokenExtName)
 	base.Response(c, common.OK, "", data)
 }

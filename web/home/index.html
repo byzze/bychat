@@ -253,10 +253,8 @@
                 <button type="submit"> send</button> -->
                 <form onsubmit="return doSubmit('text');">
                     <input type="text" name="msg" placeholder="你想要发送的消息" value="" size="35" />
-                    <input type="button" name="button" value="text" onclick="sendMsg('text')" />
+                    <input type="button" name="button" value="text" onclick="sendData('text')" />
                 </form>
-                <input type="button" name="button" value="img" onclick="sendMsg('imgage')" />
-                <input type="button" name="button" value="vedio" onclick="sendMsg('vedio')" />
                 <!-- HTML部分 -->
                 <form id="uploadForm" enctype="multipart/form-data">
                     <input type="file" name="file" id="file">
@@ -273,13 +271,13 @@
 
                 <button onclick="logout()">退出</button>
 
-                <button onclick="EnterChatRoom(101)">进入聊天室-Id:101</button>
+                <button onclick="enterChatRoom(101)">进入聊天室-Id:101</button>
 
-                <button onclick="EnterChatRoom(102)">进入聊天室-Id:102</button>
+                <button onclick="enterChatRoom(102)">进入聊天室-Id:102</button>
 
-                <button onclick="EnterChatRoom(103)">进入聊天室-Id:103</button>
+                <button onclick="enterChatRoom(103)">进入聊天室-Id:103</button>
 
-                <button onclick="EnterChatRoom(104)">进入聊天室-Id:104</button>
+                <button onclick="enterChatRoom(104)">进入聊天室-Id:104</button>
             </div>
         </div>
 
@@ -414,12 +412,6 @@
                 ws.onopen = function (evt) {
                     console.log("Connection open ...");
                     // // 连接以后
-                    // person = prompt("请输入你的名字", "hello-" + currentTime());
-                    // if (person != null) {
-                    //     console.log("用户准备登陆:" + person);
-                    //     ws.send('{"seq":"' + sendID() + '","cmd":"login","data":{"userID":"' + person + '","roomID":'+ roomID +'}}');
-                    // }
-
                     var param = {
                         "msgSeq": sendID(),
                         "cmd": "bind",
@@ -441,9 +433,7 @@
                     if (data_array.cmd === "msg") {
                         data = data_array.data
                         sval = data.msgBody
-                        console.log("sval========", sval,)
-                        console.log("sval========", sval.msgType)
-                        if (sval.msgType == "img") {
+                        if (sval.msgType == image) {
                             addChatWith(imgMsg(data.from, sval.msgContent))
                         } else {
                             addChatWith(msg(data.from, JSON.stringify(sval)))
@@ -519,8 +509,13 @@
             function GetFileType() {
 
             }
+            var image = "image"
+            var video = "video"
+            var audio = "audio"
+            var file = "file"
+            var text = "text"
+
             function handleFileUpload(files) {
-                console.log("====", files)
                 //TODO 上传一个
                 const formData = new FormData();
                 formData.append('file', files[0]);
@@ -547,13 +542,13 @@
                 // }
                 var filetype = ""
                 if (fileType.startsWith('image/')) {
-                    filetype = "image"
+                    filetype = image
                 } else if (fileType.startsWith('video/')) {
-                    filetype = "video"
+                    filetype = video
                 } else if (fileType.startsWith('audio/')) {
-                    filetype = "audio"
+                    filetype = audio
                 } else {
-                    filetype = "file"
+                    filetype = file
                 }
                 formData.append("fileType", filetype)
 
@@ -565,10 +560,9 @@
                     processData: false, // 不处理数据
                     contentType: false, // 不设置内容类型
                     success: function (data) { // 请求成功的回调函数
-                        console.log("======", data); // 弹出返回的信息，例如“上传成功”
                         if (data.code == 0) {
                             alert("上传成功")
-                            formatData(data.data.fileType, data.data.name, data.data.url, data.data.size, data.data.width, data.data.height)
+                            sendData(data.data.fileType, data.data.name, data.data.url, data.data.size, data.data.width, data.data.height)
                         } else {
                             alert("上传失败")
                         }
@@ -582,11 +576,15 @@
             $("#submit").click(function (event) {
                 event.preventDefault();
                 const fileInput = $('input[type="file"]');
+                if (roomID == 0) {
+                    alert("用户未处于房间里")
+                    return
+                }
                 handleFileUpload(fileInput[0].files);
             });
 
             function msgImg(type, name, url, size, width, height) {
-                param = {
+                var param = {
                     msgType: type,
                     userID: person.id,
                     roomID: roomID,
@@ -602,8 +600,8 @@
             }
 
             function msgText(msg) {
-                param = {
-                    msgType: "text",
+                var param = {
+                    msgType: text,
                     userID: person.id,
                     roomID: roomID,
                     msgSeq: sendID(),
@@ -615,7 +613,7 @@
 
             function msgVedio() {
                 param = {
-                    msgType: "vedio",
+                    msgType: video,
                     userID: person.id,
                     roomID: roomID,
                     msgSeq: sendID(),
@@ -630,8 +628,8 @@
             }
 
             function msgFile(url, name, size) {
-                param = {
-                    msgType: "file",
+                var param = {
+                    msgType: file,
                     userID: person.id,
                     roomID: roomID,
                     msgSeq: sendID(),
@@ -643,32 +641,37 @@
                 return param
             }
 
-            function formatData(type, name, url, size, width, height) {
+            function sendData(type, name, url, size, width, height) {
                 console.log("sendMsg message", type, url, name)
                 let msg = $("input[name='msg']").val()
                 console.log("button 点击:" + msg);
                 console.log("button type点击:" + type);
-
-                if (type == "text") {
+                var param = ""
+                if (type == text) {
                     param = msgText(msg)
                 }
-                if (type == "image") {
+                if (type == image) {
                     param = msgImg(type, name, url, size, width, height)
                 }
-                if (type == "vedio") {
+                if (type == video) {
                     param = msgVedio()
                 }
-                if (type == "file") {
+                if (type == file) {
                     param = msgFile(url, name, size)
                 }
                 msg = JSON.stringify(param)
                 sendMsg(msg)
             }
+
             function sendMsg(msg) {
+                if (roomID == 0) {
+                    alert("用户不处于房间里")
+                    return
+                }
                 $.ajax({
                     type: "POST",
                     url: 'http://{{ .httpUrl }}/user/sendMessageAll',
-                    data: JSON.stringify(param),
+                    data: msg,
                     contentType: "application/x-www-form-urlencoded",
                     success: function (data) {
                         console.log(data);
@@ -685,7 +688,6 @@
                     url: "http://{{ .httpUrl }}/user/list?roomID=" + roomID,
                     dataType: "json",
                     success: function (data) {
-                        console.log("user list:" + data.code + " userList:" + JSON.stringify(data));
                         if (data.code != 0) {
                             return false
                         }
@@ -720,12 +722,11 @@
                         $.each(res.data.data, function (i, n) {
                             data_array = JSON.parse(n);
                             data = data_array.data
-                            console.log("message list :", data)
                             jsonval = JSON.stringify(data.msgBody)
                             if (data.from === person.name) {
                                 addChatWith(myMsg(data.from, jsonval))
                             } else {
-                                if (data.msgBody.msgType == "img") {
+                                if (data.msgBody.msgType == image) {
                                     addChatWith(imgMsg(data.from, data.msgBody.msgContent))
                                 } else {
                                     addChatWith(msg(data.from, jsonval))
@@ -737,9 +738,9 @@
                 });
             }
 
-            function EnterChatRoom(rid) {
+            function enterChatRoom(rid) {
                 if (roomID != 0) {
-                    ExitChatRoom(roomID)
+                    exitChatRoom(roomID)
                 }
                 roomID = rid
                 param = {
@@ -760,11 +761,14 @@
                             getHistoryMessageList()
                             setTimeout(function () { getUserList(); }, 500); // 1秒后将会调用执行
                             $("input[name='msg']").val("");
+                            return
                         }
+                        alert("进入异常", data.msg)
                     }
                 });
             }
-            function ExitChatRoom(rid) {
+
+            function exitChatRoom(rid) {
                 roomID = 0
                 param = {
                     roomID: rid,
@@ -778,9 +782,10 @@
                     contentType: "application/x-www-form-urlencoded",
                     success: function (data) {
                         if (data.code == 0) {
-                            console.log(data);
                             exitChatRoom()
+                            return
                         }
+                        alert("退出异常", data.msg)
                     }
                 });
             }

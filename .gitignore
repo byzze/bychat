@@ -1,4 +1,4 @@
 .vscode
 log
 main.go
-api/v1/filesever/file/**
+api/v1/filesever/bychat/**

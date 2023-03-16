@@ -37,7 +37,7 @@ type SendMessageParam struct {
 	MsgContent string `json:"msgContent"`
 	URL        string `json:"url"`
 	Name       string `json:"name"`
-	Format     string `json:"Format"`
+	Format     string `json:"format"`
 	Size       int64  `json:"size"`
 	Second     int32  `json:"second"`
 	Width      int32  `json:"width"`
@@ -123,6 +123,7 @@ func SendMessageAll(ctx *gin.Context) {
 		base.Response(ctx, common.ParameterIllegal, "", nil)
 		return
 	}
+
 	if param.RoomID == 0 {
 		base.Response(ctx, common.ParameterIllegal, "", data)
 		return
