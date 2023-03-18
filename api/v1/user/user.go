@@ -4,8 +4,8 @@ import (
 	"bychat/api/v1/base"
 	"bychat/internal/common"
 	"bychat/internal/models"
-	"bychat/internal/websocket"
-	"bychat/lib/cache"
+	"bychat/pkg/api"
+	"bychat/pkg/cache"
 	"fmt"
 	"time"
 
@@ -54,7 +54,7 @@ func Login(ctx *gin.Context) {
 		return
 	}
 
-	err := websocket.Login(param.AppID, param.ID, param.NickName)
+	err := api.Login(param.AppID, param.ID, param.NickName)
 	if err != nil {
 		logrus.Error("websocket Login", err)
 		base.Response(ctx, common.OperationFailure, "", data)
@@ -79,7 +79,7 @@ func LogOut(ctx *gin.Context) {
 		return
 	}
 
-	websocket.LogOut(param.AppID, param.ID)
+	api.LogOut(param.AppID, param.ID)
 
 	base.Response(ctx, common.OK, "退出成功", nil)
 }
@@ -105,7 +105,7 @@ func GetRoomUserList(ctx *gin.Context) {
 		"appID":  param.AppID,
 	}).Info("http_request 查看全部在线用户 roomID:", param.RoomID)
 
-	userList := websocket.GetRoomUserList(param.AppID, param.RoomID)
+	userList := api.GetRoomUserList(param.AppID, param.RoomID)
 
 	data["userList"] = userList
 	data["userCount"] = len(userList)
@@ -169,7 +169,7 @@ func SendMessageAll(ctx *gin.Context) {
 	// 缓存聊天数据
 	cache.ZSetMessage(param.RoomID, message)
 
-	sendResults, err := websocket.SendUserMessageAll(param.AppID, param.RoomID, param.UserID, message)
+	sendResults, err := api.UserSendMessageAll(param.AppID, param.RoomID, param.UserID, message)
 	if err != nil {
 		data["sendResultsErr"] = err.Error()
 		base.Response(ctx, common.OperationFailure, err.Error(), data)
@@ -225,7 +225,7 @@ func EnterChatRoom(ctx *gin.Context) {
 		return
 	}
 
-	err := websocket.EnterChatRoom(param.AppID, param.RoomID, param.UserID)
+	err := api.EnterChatRoom(param.AppID, param.RoomID, param.UserID)
 	if err != nil {
 		logrus.Error("EnterChatRoom Failed", err)
 		base.Response(ctx, common.OperationFailure, err.Error(), nil)
@@ -245,7 +245,7 @@ func ExitChatRoom(ctx *gin.Context) {
 		return
 	}
 
-	err := websocket.ExitChatRoom(param.AppID, param.RoomID, param.UserID)
+	err := api.ExitChatRoom(param.AppID, param.RoomID, param.UserID)
 	if err != nil {
 		logrus.Error("ExitChatRoom Failed", err)
 		base.Response(ctx, common.OperationFailure, err.Error(), nil)

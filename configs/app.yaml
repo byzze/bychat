@@ -1,0 +1,19 @@
+app:
+  httpPort: 8080
+  httpUrl: localhost:8080
+  rpcPort: 9001
+  webSocketPort: 8089
+  webSocketUrl: localhost:8089
+
+redis:
+  addr: "localhost:6379"
+  password: ""
+  DB: 0
+  poolSize: 30
+  minIdleConns: 30
+
+log:
+  dir: log
+  name: bychat.log
+  level: trace
+  max_size: 100

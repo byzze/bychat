@@ -432,12 +432,7 @@
 
                     if (data_array.cmd === "msg") {
                         data = data_array.data
-                        sval = data.msgBody
-                        if (sval.msgType == image) {
-                            addChatWith(imgMsg(data.from, sval.msgContent))
-                        } else {
-                            addChatWith(msg(data.from, JSON.stringify(sval)))
-                        }
+                        addChatWith(msg(data.from, JSON.stringify(sval)))
 
                     } else if (data_array.cmd === "enter") {
                         data = data_array.data
@@ -455,6 +450,11 @@
                 };
             }
 
+            function parse(msg) {
+                var data_array = JSON.parse(msg);
+                var data = data_array.data.msgBody
+                return data.msgContent
+            }
             // 心跳
             function heartbeat() {
                 var param = {
@@ -675,7 +675,7 @@
                     contentType: "application/x-www-form-urlencoded",
                     success: function (data) {
                         console.log(data);
-                        addChatWith(myMsg(person.name, msg))
+                        addChatWith(myMsg(person.name, msg.))
                         $("input[name='msg']").val("");
                     }
                 });
@@ -726,11 +726,7 @@
                             if (data.from === person.name) {
                                 addChatWith(myMsg(data.from, jsonval))
                             } else {
-                                if (data.msgBody.msgType == image) {
-                                    addChatWith(imgMsg(data.from, data.msgBody.msgContent))
-                                } else {
-                                    addChatWith(msg(data.from, jsonval))
-                                }
+                                addChatWith(msg(data.from, jsonval))
                             }
                         });
                         return false

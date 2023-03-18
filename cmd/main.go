@@ -1,13 +1,13 @@
 package main
 
 import (
-	"bychat/config"
+	config "bychat/configs"
 	"bychat/internal/common"
 	"bychat/internal/grpcserver"
-	"bychat/internal/routers"
 	"bychat/internal/task"
 	"bychat/internal/websocket"
-	"bychat/lib/redislib"
+	"bychat/pkg/redislib"
+	"bychat/pkg/routers"
 	"bytes"
 	"flag"
 	"io/ioutil"

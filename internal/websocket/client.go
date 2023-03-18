@@ -162,7 +162,7 @@ func (client *Client) IsHeartbeatTimeout(currentTime uint64) (timeout bool) {
 
 // IsLogin 是否登录了
 func (client *Client) IsLogin() (isLogin bool) {
-	c := clientManager.GetUserClient(client.AppID, client.UserID)
+	c := clientManager.getUserClient(client.AppID, client.UserID)
 	if c != nil {
 		isLogin = true
 	}

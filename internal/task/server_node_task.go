@@ -2,7 +2,7 @@ package task
 
 import (
 	"bychat/internal/websocket"
-	"bychat/lib/cache"
+	"bychat/pkg/cache"
 	"runtime/debug"
 	"time"
 
@@ -11,11 +11,11 @@ import (
 
 // ServerNodeInit 服务器初始化
 func ServerNodeInit() {
-	Timer(2*time.Second, 60*time.Second, serverNode, "", serverDefer, "")
+	Timer(2*time.Second, 60*time.Second, serverRegister, "", serverDefer, "")
 }
 
 // 服务注册
-func serverNode(param interface{}) (result bool) {
+func serverRegister(param interface{}) (result bool) {
 	result = true
 
 	defer func() {

@@ -1,9 +1,9 @@
 package websocket
 
 import (
-	"bychat/internal/helper"
 	"bychat/internal/models"
-	"bychat/lib/cache"
+	"bychat/internal/utils"
+	"bychat/pkg/cache"
 	"fmt"
 	"sync"
 	"time"
@@ -23,17 +23,20 @@ type ClientManager struct {
 	// Broadcast   chan []byte        // 广播 向全部成员发送数据
 }
 
+var sOnce sync.Once
+
 // NewClientManager 管理client
 func NewClientManager() (clientManager *ClientManager) {
-	clientManager = &ClientManager{
-		Clients:    make(map[*Client]bool),
-		Users:      make(map[string]*Client),
-		Register:   make(chan *Client, 1000),
-		BindUser:   make(chan *Client, 1000),
-		Unregister: make(chan *Client, 1000),
-		// Broadcast:  make(chan []byte, 1000),
-	}
-
+	sOnce.Do(func() {
+		clientManager = &ClientManager{
+			Clients:    make(map[*Client]bool),
+			Users:      make(map[string]*Client),
+			Register:   make(chan *Client, 1000),
+			BindUser:   make(chan *Client, 1000),
+			Unregister: make(chan *Client, 1000),
+			// Broadcast:  make(chan []byte, 1000),
+		}
+	})
 	return
 }
 
@@ -72,7 +75,6 @@ func (manager *ClientManager) ClientsRange(f func(client *Client, value bool) (r
 			return
 		}
 	}
-
 	return
 }
 
@@ -101,7 +103,7 @@ func (manager *ClientManager) DelClients(client *Client) {
 }
 
 // GetUserClient 获取用户的连接
-func (manager *ClientManager) GetUserClient(appID, userID uint32) (client *Client) {
+func (manager *ClientManager) getUserClient(appID, userID uint32) (client *Client) {
 	manager.UserLock.RLock()
 	defer manager.UserLock.RUnlock()
 	logrus.WithFields(logrus.Fields{
@@ -182,7 +184,7 @@ func (manager *ClientManager) sendAll(message []byte, appID, roomID, userID uint
 
 	roomUserList := cache.GetChatRoomUser(roomID)
 	for _, user := range roomUserList {
-		conn := manager.GetUserClient(appID, user.ID)
+		conn := manager.getUserClient(appID, user.ID)
 		if conn != nil && user.ID != userID {
 			conn.SendMsg(message)
 		}
@@ -228,21 +230,21 @@ func (manager *ClientManager) EventUnregister(client *Client) {
 	logrus.Info("EventUnregister 用户断开连接", client.Addr)
 
 	if client.UserID != 0 {
-		orderID := helper.GetOrderIDTime()
+		orderID := utils.GetOrderIDTime()
 		// 根据用户ID查询房间id TODO
 		data := models.GetTextMsgDataExit(userOnline.NickName, "", orderID, "用户已经离开~")
-		SendUserMessageAll(client.AppID, roomID, client.UserID, data)
+		SendMsgAllServer(client.AppID, roomID, client.UserID, data)
 	}
 	client.Socket.Close()
 }
 
-// bindChannel 注销client
-func binUserdChannel(client *Client) {
+// BinUserdChannel 注销client
+func BinUserdChannel(client *Client) {
 	clientManager.BindUser <- client
 }
 
-// unregisterChannel 注销client
-func unregisterChannel(client *Client) {
+// UnregisterChannel 注销client
+func UnregisterChannel(client *Client) {
 	clientManager.Unregister <- client
 }
 
@@ -318,7 +320,7 @@ func ClearTimeoutConnections() {
 				"client.LoginTime":     client.LoginTime,
 				"client.HeartbeatTime": client.HeartbeatTime,
 			}).Info("心跳时间超时 关闭连接")
-			unregisterChannel(client)
+			UnregisterChannel(client)
 			// client.Socket.Close()
 		}
 	}

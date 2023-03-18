@@ -1,9 +1,12 @@
 package websocket
 
 import (
-	"bychat/internal/helper"
+	"bychat/internal/common"
 	"bychat/internal/models"
+	"bychat/internal/utils"
+	"encoding/json"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -19,47 +22,10 @@ const (
 )
 
 var (
-	clientManager = NewClientManager()                     // 管理者
-	roomIDs       = []uint32{defaultRoomID, 102, 103, 104} // 全部的平台
-
-	appIDs = []uint32{defaultRoomID, 1, 2, 3} // 全部的平台
-
-	serverIP   string
-	serverPort string
+	clientManager = NewClientManager() // 管理者
+	serverIP      string
+	serverPort    string
 )
-
-// GetRoomIDs 获取id
-func GetRoomIDs() []uint32 {
-	return roomIDs
-}
-
-// GetAppIds 获取id
-func GetAppIds() []uint32 {
-	return appIDs
-}
-
-// InRoomIDs 校验是否在房间id
-func InRoomIDs(roomID uint32) (inRoomID bool) {
-	for _, value := range roomIDs {
-		if value == roomID {
-			inRoomID = true
-			return
-		}
-	}
-	return
-}
-
-// GetDefaultRoomID 获取df id
-func GetDefaultRoomID() (roomID uint32) {
-	roomID = defaultRoomID
-	return
-}
-
-// GetDefaultAppID 获取df id
-func GetDefaultAppID() (appID uint32) {
-	appID = defaultAppID
-	return
-}
 
 // GetServerNode 获取id
 func GetServerNode() (server *models.ServerNode) {
@@ -77,7 +43,7 @@ func IsLocal(server *models.ServerNode) (isLocal bool) {
 
 // StartWebSocket 启动程序
 func StartWebSocket() {
-	serverIP = helper.GetServerNodeIP()
+	serverIP = utils.GetServerNodeIP()
 
 	webSocketPort := viper.GetString("app.webSocketPort")
 	rpcPort := viper.GetString("app.rpcPort")
@@ -114,4 +80,87 @@ func wsPage(w http.ResponseWriter, req *http.Request) {
 
 	// 用户连接事件
 	clientManager.Register <- client
+}
+
+// DisposeFunc 处理函数
+type DisposeFunc func(client *Client, seq string, message []byte) (code uint32, msg string, data interface{})
+
+var (
+	handlers        = make(map[models.MessageCmd]DisposeFunc)
+	handlersRWMutex sync.RWMutex
+)
+
+// Register 注册
+func Register(key models.MessageCmd, value DisposeFunc) {
+	handlersRWMutex.Lock()
+	defer handlersRWMutex.Unlock()
+	handlers[key] = value
+
+	return
+}
+
+func getHandlers(key models.MessageCmd) (value DisposeFunc, ok bool) {
+	handlersRWMutex.RLock()
+	defer handlersRWMutex.RUnlock()
+
+	value, ok = handlers[key]
+	return
+}
+
+// ProcessData websocket处理数据
+func ProcessData(c *Client, message []byte) {
+	logrus.WithFields(logrus.Fields{
+		"addr": c.Addr,
+		"data": string(message),
+	}).Info("ProcessData Request")
+
+	var req = &models.Request{}
+	err := json.Unmarshal(message, req)
+	if err != nil {
+		logrus.Error(err)
+		return
+	}
+	requestData, err := json.Marshal(req.Data)
+	if err != nil {
+		logrus.Error("处理数据 json Marshal", err)
+		c.SendMsg([]byte("处理数据失败"))
+		return
+	}
+
+	seq := req.MsgSeq
+	cmd := models.MessageCmd(req.Cmd)
+
+	var (
+		code uint32
+		msg  string
+		data interface{}
+	)
+
+	if v, ok := getHandlers(cmd); ok {
+		code, msg, data = v(c, seq, requestData)
+	} else {
+		code = common.RoutingNotExist
+		logrus.WithFields(logrus.Fields{
+			"client.Addr": c.Addr,
+			"cmd":         cmd,
+		}).Error("处理数据 路由不存在")
+	}
+
+	msg = common.GetErrorMessage(code, msg)
+
+	responseHead := models.NewResponse(seq, code, msg, data, cmd)
+
+	headByte, err := json.Marshal(responseHead)
+	if err != nil {
+		logrus.Error("处理数据 json Marshal", err)
+		return
+	}
+
+	c.SendMsg(headByte)
+
+	logrus.WithFields(logrus.Fields{
+		"cmd":      cmd,
+		"code":     code,
+		"headByte": string(headByte),
+	}).Info("acc_response send")
 }

@@ -4,7 +4,7 @@ import (
 	"bychat/internal/common"
 	"bychat/internal/protobuf"
 	"bychat/internal/websocket"
-	"bychat/lib/cache"
+	"bychat/pkg/cache"
 	"context"
 	"fmt"
 	"log"
@@ -47,7 +47,7 @@ func (server *server) SendMsgAll(c context.Context, req *protobuf.SendMsgAllReq)
 	}).Info("grpc_response SendMsgAll 给本机全体用户发消息")
 	rsp = &protobuf.SendMsgAllRsp{}
 
-	websocket.AllSendMessages(req.GetAppID(), req.GetRoomID(), req.GetUserID(), req.GetData())
+	websocket.SendMsgAllClient(req.GetAppID(), req.GetRoomID(), req.GetUserID(), req.GetData())
 
 	setErr(rsp, common.OK, "")
 
@@ -59,7 +59,7 @@ func (server *server) SendMsgAll(c context.Context, req *protobuf.SendMsgAllReq)
 func (server *server) GetRoomUserList(c context.Context, req *protobuf.GetRoomUserListReq) (rsp *protobuf.GetRoomUserListRsp,
 	err error) {
 
-	fmt.Println("grpc_request 获取本机用户列表", req.String())
+	logrus.Info("grpc_request 获取本机用户列表", req.String())
 
 	// appID := req.GetAppID()
 	rsp = &protobuf.GetRoomUserListRsp{}

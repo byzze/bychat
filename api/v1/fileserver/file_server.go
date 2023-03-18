@@ -21,10 +21,8 @@ func UploadFile(c *gin.Context) {
 	data := make(map[string]interface{})
 	fileType := c.PostForm("fileType")
 
-	var dst = "./api/v1/fileserver/bychat/%s/"
+	var dstDir = "./api/v1/fileserver/bychat/%s/"
 	// 单文件
-	// file, _ := c.FormFile("file")
-
 	file, h, err := c.Request.FormFile("file")
 	if err != nil {
 		base.Response(c, common.ParameterIllegal, err.Error(), nil)
@@ -32,12 +30,15 @@ func UploadFile(c *gin.Context) {
 	}
 	defer file.Close()
 
-	var resURL string
-	messageFileType := models.MessageType(fileType)
-	switch messageFileType {
+	dstDir = fmt.Sprintf(dstDir, fileType)
+
+	var reqURL string
+	messageType := models.MessageType(fileType)
+	switch messageType {
 	case models.MessageTypeImage:
 		config, _, err := image.DecodeConfig(file)
 		if err != nil {
+			logrus.WithError(err).Error("DecodeConfig Img")
 			base.Response(c, common.ParameterIllegal, err.Error(), nil)
 			return
 		}
@@ -45,10 +46,8 @@ func UploadFile(c *gin.Context) {
 		width, height := config.Width, config.Height
 		data["width"] = width
 		data["height"] = height
-		resURL = "/fileserver/bychat/" + fileType
-		dst = fmt.Sprintf(dst, fileType)
+		reqURL = "/fileserver/bychat/" + fileType
 	case models.MessageTypeFile, models.MessageTypeVedio, models.MessageTypeAudio:
-		dst = fmt.Sprintf(dst, fileType)
 	default:
 		base.Response(c, common.ParameterIllegal, "", nil)
 		return
@@ -60,15 +59,21 @@ func UploadFile(c *gin.Context) {
 	size := h.Size
 
 	tokenExtName := fmt.Sprintf("%d%s", token, filepath.Ext(fileName))
-	dst = fmt.Sprintf(dst+"%s", tokenExtName)
-	logrus.WithField("dst", dst).Info("UploadFile dst")
+	dstDir = fmt.Sprintf(dstDir+"%s", tokenExtName)
+
+	logrus.WithField("dst", dstDir).Info("UploadFile dst")
 	// 上传文件至指定的完整文件路径
-	c.SaveUploadedFile(h, dst)
+	err = c.SaveUploadedFile(h, dstDir)
+	if err != nil {
+		logrus.WithError(err).Error("SaveUploadedFile")
+		base.Response(c, common.OperationFailure, err.Error(), nil)
+		return
+	}
 
 	data["token"] = tokenExtName
 	data["name"] = fileName
 	data["size"] = size
 	data["fileType"] = fileType
-	data["url"] = fmt.Sprintf("%s/%s", resURL, tokenExtName)
+	data["url"] = fmt.Sprintf("%s/%s", reqURL, tokenExtName)
 	base.Response(c, common.OK, "", data)
 }
