@@ -675,7 +675,7 @@
                     contentType: "application/x-www-form-urlencoded",
                     success: function (data) {
                         console.log(data);
-                        addChatWith(myMsg(person.name, msg.))
+                        addChatWith(myMsg(person.name, msg))
                         $("input[name='msg']").val("");
                     }
                 });
@@ -739,7 +739,7 @@
                     exitChatRoom(roomID)
                 }
                 roomID = rid
-                param = {
+                var param = {
                     roomID: rid,
                     userID: person.id,
                     appID: appID,
@@ -765,8 +765,7 @@
             }
 
             function exitChatRoom(rid) {
-                roomID = 0
-                param = {
+                var param = {
                     roomID: rid,
                     userID: person.id,
                     appID: appID,
@@ -778,7 +777,9 @@
                     contentType: "application/x-www-form-urlencoded",
                     success: function (data) {
                         if (data.code == 0) {
-                            exitChatRoom()
+                            var tmpRoomId = roomID
+                            alert("退出房间:", tmpRoomId, data.msg)
+                            roomID = 0
                             return
                         }
                         alert("退出异常", data.msg)

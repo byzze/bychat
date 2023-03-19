@@ -1,8 +1,8 @@
 package task
 
 import (
-	"bychat/internal/websocket"
-	"bychat/pkg/cache"
+	"bychat/infra/ws"
+	"bychat/internal/cache"
 	"runtime/debug"
 	"time"
 
@@ -27,16 +27,16 @@ func serverRegister(param interface{}) (result bool) {
 		}
 	}()
 
-	server := websocket.GetServerNode()
+	serverNode := ws.GetServerNode()
 	currentTime := uint64(time.Now().Unix())
 
 	logrus.WithFields(logrus.Fields{
 		"param":       param,
-		"server":      server,
+		"server":      serverNode,
 		"currentTime": currentTime,
 	}).Info("定时任务，服务注册")
 
-	cache.SetServerNodeInfo(server, currentTime)
+	cache.SetServerNodeInfo(serverNode, currentTime)
 	return
 }
 
@@ -55,7 +55,7 @@ func serverDefer(param interface{}) (result bool) {
 		"param": param,
 	}).Info("服务下线")
 
-	server := websocket.GetServerNode()
+	server := ws.GetServerNode()
 	cache.DelServerNodeInfo(server)
 	return
 }
