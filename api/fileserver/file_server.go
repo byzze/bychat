@@ -2,7 +2,7 @@ package fileserver
 
 import (
 	"bychat/api/base"
-	"bychat/infra/models"
+	"bychat/im/models"
 	"bychat/pkg/common"
 	"fmt"
 	"image"
@@ -47,7 +47,7 @@ func UploadFile(c *gin.Context) {
 		data["width"] = width
 		data["height"] = height
 		reqURL = "/fileserver/bychat/" + fileType
-	case models.MessageTypeFile, models.MessageTypeVedio, models.MessageTypeAudio:
+	// case models.MessageTypeFile, models.MessageTypeVedio, models.MessageTypeAudio:
 	default:
 		base.Response(c, common.ParameterIllegal, "", nil)
 		return

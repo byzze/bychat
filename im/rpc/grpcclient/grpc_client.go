@@ -1,8 +1,8 @@
 package grpcclient
 
 import (
-	"bychat/infra/models"
-	"bychat/infra/rpc/protobuf"
+	"bychat/im/models"
+	"bychat/im/rpc/protobuf"
 	"bychat/pkg/common"
 	"context"
 	"fmt"
@@ -56,8 +56,8 @@ func SendMsgAll(server *models.ServerNode, appID, roomID, userID uint32, message
 }
 
 // GetRoomUserList 获取用户列表 link::https://github.com/grpc/grpc-go/blob/master/examples/helloworld/greeter_client/main.go
-func GetRoomUserList(server *models.ServerNode, appID, roomID uint32) (userList []*models.ResponseUserOnline, err error) {
-	userList = make([]*models.ResponseUserOnline, 0)
+func GetRoomUserList(server *models.ServerNode, appID, roomID uint32) (userList []uint32, err error) {
+	userList = make([]uint32, 0)
 
 	conn, err := grpc.Dial(server.String(), grpc.WithInsecure())
 	if err != nil {
@@ -87,12 +87,7 @@ func GetRoomUserList(server *models.ServerNode, appID, roomID uint32) (userList 
 	}
 
 	for _, v := range rsp.GetResUserOnline() {
-		tmp := &models.ResponseUserOnline{
-			ID:       v.Id,
-			NickName: v.NickName,
-			Avatar:   v.Avatar,
-		}
-		userList = append(userList, tmp)
+		userList = append(userList, v.Id)
 	}
 	logrus.Info("rpc 获取用户列表 成功:", userList)
 	return

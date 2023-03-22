@@ -1,8 +1,8 @@
 package task
 
 import (
-	"bychat/infra/ws"
-	"bychat/internal/cache"
+	"bychat/im/cache"
+	"bychat/im/models"
 	"runtime/debug"
 	"time"
 
@@ -27,7 +27,8 @@ func serverRegister(param interface{}) (result bool) {
 		}
 	}()
 
-	serverNode := ws.GetServerNode()
+	serverNode := models.ServerNodeInfo
+
 	currentTime := uint64(time.Now().Unix())
 
 	logrus.WithFields(logrus.Fields{
@@ -55,7 +56,8 @@ func serverDefer(param interface{}) (result bool) {
 		"param": param,
 	}).Info("服务下线")
 
-	server := ws.GetServerNode()
+	server := models.ServerNodeInfo
+
 	cache.DelServerNodeInfo(server)
 	return
 }

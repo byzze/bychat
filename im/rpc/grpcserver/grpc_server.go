@@ -1,8 +1,8 @@
 package grpcserver
 
 import (
-	"bychat/infra/rpc/protobuf"
-	"bychat/infra/ws"
+	messagecenter "bychat/im/message-center"
+	"bychat/im/rpc/protobuf"
 	"bychat/pkg/common"
 	"context"
 	"fmt"
@@ -46,7 +46,7 @@ func (server *server) SendMsgAll(c context.Context, req *protobuf.SendMsgAllReq)
 	}).Info("grpc_response SendMsgAll 给本机全体用户发消息")
 	rsp = &protobuf.SendMsgAllRsp{}
 
-	ws.SendMsgAllClient(req.GetAppID(), req.GetRoomID(), req.GetUserID(), req.GetData())
+	messagecenter.SendMsgAllClient(req.GetAppID(), req.GetRoomID(), req.GetUserID(), req.GetData())
 
 	setErr(rsp, common.OK, "")
 
@@ -64,15 +64,15 @@ func (server *server) GetRoomUserList(c context.Context, req *protobuf.GetRoomUs
 	rsp = &protobuf.GetRoomUserListRsp{}
 
 	// 本机
-	userResList := ws.GetChatRoomUser(req.GetRoomID())
+	userResList := messagecenter.GetChatRoomUser(req.GetRoomID())
 
 	setErr(rsp, common.OK, "")
 	var userList []*protobuf.ResponUserOnline
 	for _, v := range userResList {
 		tmp := &protobuf.ResponUserOnline{
-			Id:       v.ID,
-			NickName: v.NickName,
-			Avatar:   v.Avatar,
+			Id: v,
+			// NickName: v.NickName,
+			// Avatar:   v.Avatar,
 		}
 		userList = append(userList, tmp)
 	}

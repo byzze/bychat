@@ -414,8 +414,8 @@
                     // // 连接以后
                     var param = {
                         "msgSeq": sendID(),
-                        "cmd": "bind",
-                        "data": {
+                        "msgCmd": "bindUser",
+                        "msgContent": {
                             "userID": person.id,
                             "appID": appID,
                             "token": token
@@ -459,8 +459,8 @@
             function heartbeat() {
                 var param = {
                     "msgSeq": sendID(),
-                    "cmd": "heartbeat",
-                    "data": { "userID": person.id }
+                    "msgCmd": "heartbeat",
+                    "msgContent": { "userID": person.id, "appID": appID }
                 }
                 ws.send(JSON.stringify(param));
             }

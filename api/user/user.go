@@ -2,9 +2,7 @@ package user
 
 import (
 	"bychat/api/base"
-	"bychat/infra/models"
 	"bychat/internal/api/user"
-	"bychat/internal/cache"
 	"bychat/pkg/common"
 	"fmt"
 	"time"
@@ -137,39 +135,11 @@ func SendMessageAll(ctx *gin.Context) {
 		"messageType":    param.MsgType,
 	}).Info("SendMessageAll Param")
 
-	if cache.SeqDuplicates(param.MsgSeq) {
-		logrus.Info("数据重复：", param.MsgSeq)
-		base.Response(ctx, common.OK, "", data)
-		return
-	}
-	uo, err := cache.GetUserOnlineInfo(param.UserID)
-	if err != nil {
-		logrus.Error("给全体用户发消息", err)
-		return
-	}
-
 	var message string
-	msgType := models.MessageType(param.MsgType)
-	switch msgType {
-	case models.MessageTypeText:
-		message = models.GetTextMsgData(uo.NickName, "", param.MsgSeq, param.MsgContent)
-	case models.MessageTypeImage:
-		message = models.GetImgMsgData(uo.NickName, "", param.MsgSeq, param.URL, param.Name, param.Size, param.Width, param.Height)
-	case models.MessageTypeFile:
-		message = models.GetFileMsgData(uo.NickName, "", param.MsgSeq, param.URL, param.Name, param.Size)
-	case models.MessageTypeVedio:
-		message = models.GetVedioMsgData(uo.NickName, "", param.MsgSeq, param.URL, param.Name, param.Format, param.Size, param.Second)
-	case models.MessageTypeAudio:
-		message = models.GetSoundMsgData(uo.NickName, "", param.MsgSeq, param.URL, param.Size, param.Second)
-	default:
-		base.Response(ctx, common.ParameterIllegal, "未知数据格式", data)
-		return
-	}
 
-	// 缓存聊天数据
-	cache.ZSetMessage(param.RoomID, message)
+	// TODO
 
-	sendResults, err := user.UserSendMessageAll(param.AppID, param.RoomID, param.UserID, message)
+	sendResults, err := user.SendMessageAll(param.AppID, param.RoomID, param.UserID, message)
 	if err != nil {
 		data["sendResultsErr"] = err.Error()
 		base.Response(ctx, common.OperationFailure, err.Error(), data)
@@ -196,15 +166,7 @@ func HistoryMessageList(ctx *gin.Context) {
 		base.Response(ctx, common.ParameterIllegal, "", data)
 		return
 	}
-
-	res, err := cache.ZGetMessageByOffset(param.RoomID, param.Start, param.Limit)
-	if err != nil {
-		logrus.Error("ZGetMessageByOffset", err)
-		base.Response(ctx, common.OperationFailure, "", data)
-		return
-	}
-
-	data["data"] = res
+	// TODO
 	data["start"] = param.Start + param.Limit
 	data["limit"] = param.Limit
 	base.Response(ctx, common.OK, "", data)

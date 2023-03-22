@@ -1,18 +1,16 @@
 package cache
 
-import "bychat/infra/models"
-
-var roomCache = make(map[uint32][]*models.UserOnline)
+var roomCache = make(map[uint32][]uint32)
 
 // SetChatRoomUser 设置缓存
-func SetChatRoomUser(roomID uint32, user *models.UserOnline) {
-	roomCache[roomID] = append(roomCache[roomID], user)
+func SetChatRoomUser(roomID, userID uint32) {
+	roomCache[roomID] = append(roomCache[roomID], userID)
 }
 
 // DelChatRoomUser 设置缓存
 func DelChatRoomUser(roomID, userID uint32) {
-	for i, r := range roomCache[roomID] {
-		if r.ID == userID {
+	for i, id := range roomCache[roomID] {
+		if id == userID {
 			roomCache[roomID] = append(roomCache[roomID][:i], roomCache[roomID][i+1:]...)
 			break
 		}
@@ -20,15 +18,15 @@ func DelChatRoomUser(roomID, userID uint32) {
 }
 
 // GetChatRoomUser 设置缓存
-func GetChatRoomUser(roomID uint32) []*models.UserOnline {
+func GetChatRoomUser(roomID uint32) []uint32 {
 	return roomCache[roomID]
 }
 
 // GetChatRoomID 获取房间ID
 func GetChatRoomID(userID uint32) uint32 {
 	for roomID, list := range roomCache {
-		for _, r := range list {
-			if r.ID == userID {
+		for _, id := range list {
+			if id == userID {
 				return roomID
 			}
 		}

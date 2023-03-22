@@ -2,7 +2,8 @@ package systems
 
 import (
 	"bychat/api/base"
-	"bychat/infra/ws"
+	"bychat/im/client"
+
 	"bychat/pkg/common"
 	"runtime"
 
@@ -25,7 +26,7 @@ func Status(c *gin.Context) {
 	data["numCPU"] = numCPU
 
 	// ClientManager 信息
-	data["managerInfo"] = ws.GetManagerInfo(isDebug)
+	data["managerInfo"] = client.GetManagerInfo(isDebug)
 
 	base.Response(c, common.OK, "", data)
 }

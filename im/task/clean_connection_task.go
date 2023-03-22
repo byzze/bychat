@@ -1,7 +1,7 @@
 package task
 
 import (
-	"bychat/infra/ws"
+	"bychat/im/client"
 	"runtime/debug"
 	"time"
 
@@ -36,7 +36,7 @@ func cleanConnection(param interface{}) (result bool) {
 		}
 	}()
 
-	ws.ClearTimeoutConnections()
+	client.ClearTimeoutConnections()
 
 	logrus.WithFields(logrus.Fields{
 		"param": param,

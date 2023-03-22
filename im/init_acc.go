@@ -1,7 +1,10 @@
-package ws
+package im
 
 import (
-	"bychat/infra/models"
+	"bychat/im/client"
+	messagecenter "bychat/im/message-center"
+	"bychat/im/models"
+	"bychat/im/router"
 	"bychat/pkg/utils"
 	"net/http"
 	"time"
@@ -23,20 +26,6 @@ var (
 	serverPort string
 )
 
-// GetServerNode 获取id
-func GetServerNode() (serverNode *models.ServerNode) {
-	serverNode = models.NewServerNode(serverIP, serverPort)
-	return
-}
-
-// IsLocal 校验本地
-func IsLocal(server *models.ServerNode) (isLocal bool) {
-	if server.IP == serverIP && server.Port == serverPort {
-		isLocal = true
-	}
-	return
-}
-
 // StartWebSocket 启动程序
 func StartWebSocket() {
 	serverIP = utils.GetServerNodeIP()
@@ -45,11 +34,15 @@ func StartWebSocket() {
 	rpcPort := viper.GetString("app.rpcPort")
 
 	serverPort = rpcPort
+	// 初始化路由
+	router.InitWebsocket()
 
 	http.HandleFunc("/acc", wsPage)
 
+	models.NewServerNode(serverIP, serverPort)
+
 	// 添加处理程序
-	go GetClientManager().start()
+	go client.ManagerStart()
 	logrus.Infof("WebSocket 启动程序成功:%s:%s", serverIP, serverPort)
 
 	http.ListenAndServe(":"+webSocketPort, nil)
@@ -69,11 +62,11 @@ func wsPage(w http.ResponseWriter, req *http.Request) {
 	logrus.Info("webSocket 建立连接:", conn.RemoteAddr().String())
 
 	currentTime := uint64(time.Now().Unix())
-	client := models.NewClient(0, serverIP, serverPort, conn.RemoteAddr().String(), conn, currentTime)
+	c := client.NewClient(0, serverIP, serverPort, conn.RemoteAddr().String(), conn, currentTime)
 
-	go client.Read()
-	go client.Write()
+	go c.Read(messagecenter.ProcessData)
+	go c.Write()
 
 	// 用户连接事件
-	GetClientManager().Register <- client
+	client.GetManager().Register <- c
 }

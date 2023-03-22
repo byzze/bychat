@@ -1,12 +1,9 @@
 package user
 
 import (
-	"bychat/infra/models"
-	"bychat/infra/rpc/grpcclient"
-	"bychat/infra/ws"
-	"bychat/internal/cache"
-	"bychat/pkg/utils"
-	"errors"
+	"bychat/im/cache"
+	messagecenter "bychat/im/message-center"
+	"bychat/im/models"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -21,7 +18,7 @@ func Login(appID, userID uint32, nickName string) error {
 
 	currentTime := uint64(time.Now().Unix())
 	// TODO 数据库，数据校验
-	var user = models.UserLogin(appID, userID, "", "", nickName, "", currentTime)
+	var user = messagecenter.UserLogin(appID, userID, "", "", nickName, "", currentTime)
 	return cache.SetUserOnlineInfo(userID, user)
 }
 
@@ -32,11 +29,8 @@ func LogOut(appID, userID uint32) {
 		"UserId": userID,
 	}).Info("webSocket_request 退出")
 	// 设置redis缓存
-	client := ws.GetUserClient(appID, userID)
-	if client == nil {
-		return
-	}
-	ws.UnregisterChannel(client)
+	messagecenter.UserLogout(appID, userID)
+
 }
 
 // GetRoomUserList 获取全部用户
@@ -44,33 +38,7 @@ func GetRoomUserList(appID, roomID uint32) (userList []*models.ResponseUserOnlin
 	logrus.WithFields(logrus.Fields{
 		"roomID": roomID,
 	}).Info("GetRoomUserList")
-	currentTime := uint64(time.Now().Unix())
-	servers, err := ws.GetServerNodeAll(currentTime)
-	if err != nil {
-		logrus.Error("给全体用户发消息", err)
-		return
-	}
-
-	for i, server := range servers {
-		if server.IP == ws.GetServerNode().IP && server.Port == ws.GetServerNode().Port {
-			for _, v := range cache.GetChatRoomUser(roomID) {
-				tmp := &models.ResponseUserOnline{
-					ID:       v.ID,
-					NickName: v.NickName,
-					Avatar:   v.Avatar,
-				}
-				userList = append(userList, tmp)
-			}
-		} else {
-			roomUserList, err := grpcclient.GetRoomUserList(servers[i], appID, roomID)
-			if err != nil {
-				logrus.Error("rpc GetRoomUserList", err)
-				continue
-			}
-			userList = append(userList, roomUserList...)
-		}
-	}
-
+	userList = messagecenter.GetRoomUserList(appID, roomID)
 	return
 }
 
@@ -78,42 +46,41 @@ func GetRoomUserList(appID, roomID uint32) (userList []*models.ResponseUserOnlin
 func EnterChatRoom(appID, roomID, userID uint32) error {
 	// 记录函数名称和请求参数
 	logrus.WithFields(logrus.Fields{
-		"function": "EnterChatRoom",
-		"appID":    appID,
-		"roomID":   roomID,
-		"userID":   userID,
+		"appID":  appID,
+		"roomID": roomID,
+		"userID": userID,
 	}).Info("EnterChatRoom called")
 
 	// 获取用户在线信息
-	uo, err := cache.GetUserOnlineInfo(userID)
-	if err != nil {
-		logrus.WithError(err).Error("EnterChatRoom: failed to get user online info")
-		return err
-	}
+	/* 	uo, err := cache.GetUserOnlineInfo(userID)
+	   	if err != nil {
+	   		logrus.WithError(err).Error("EnterChatRoom: failed to get user online info")
+	   		return err
+	   	}
 
-	if uo == nil {
-		return errors.New("user is not online")
-	}
+	   	if uo == nil {
+	   		return errors.New("user is not online")
+	   	}
 
-	seq := utils.GetOrderIDTime()
+	   	seq := utils.GetOrderIDTime()
 
-	cache.SetChatRoomUser(roomID, uo)
+	   	cache.SetChatRoomUser(roomID, uo)
 
-	data := models.GetTextMsgDataEnter(uo.NickName, "", seq, "哈喽~")
+	   	data := models.GetTextMsgDataEnter(uo.NickName, "", seq, "哈喽~")
 
-	// 记录消息序列号并发送消息
-	logrus.WithFields(logrus.Fields{
-		"seq": seq,
-	}).Info("EnterChatRoom: message sent")
-	sendResults, err := UserSendMessageAll(appID, roomID, userID, data)
-	if err != nil {
-		logrus.WithError(err).Error("EnterChatRoom: failed to send message")
-		return err
-	}
-	if !sendResults {
-		return errors.New("failed to send message")
-	}
-
+	   	// 记录消息序列号并发送消息
+	   	logrus.WithFields(logrus.Fields{
+	   		"seq": seq,
+	   	}).Info("EnterChatRoom: message sent")
+	   	sendResults, err := SendMessageAll(appID, roomID, userID, data)
+	   	if err != nil {
+	   		logrus.WithError(err).Error("EnterChatRoom: failed to send message")
+	   		return err
+	   	}
+	   	if !sendResults {
+	   		return errors.New("failed to send message")
+	   	}
+	*/
 	return nil
 }
 
@@ -124,7 +91,7 @@ func ExitChatRoom(appID, roomID, userID uint32) error {
 		"UserId": userID,
 	}).Info("ExitChatRoom")
 
-	uo, err := cache.GetUserOnlineInfo(userID)
+	/* uo, err := cache.GetUserOnlineInfo(userID)
 	if err != nil {
 		logrus.WithError(err).Error("EnterChatRoom Failed")
 		return err
@@ -138,7 +105,7 @@ func ExitChatRoom(appID, roomID, userID uint32) error {
 
 	cache.DelChatRoomUser(roomID, userID)
 
-	sendResults, err := UserSendMessageAll(appID, roomID, userID, data)
+	sendResults, err := SendMessageAll(appID, roomID, userID, data)
 	if err != nil {
 		logrus.WithError(err).Error("ExitChatRoom: SendUserMessageAll Failed")
 		return err
@@ -146,12 +113,12 @@ func ExitChatRoom(appID, roomID, userID uint32) error {
 	if !sendResults {
 		return errors.New("failed to send message")
 	}
-
+	*/
 	return nil
 }
 
-// UserSendMessageAll 用户发送消息 群聊
-func UserSendMessageAll(appID, roomID, userID uint32, message string) (sendResults bool, err error) {
+// SendMessageAll 用户发送消息 群聊
+func SendMessageAll(appID, roomID, userID uint32, message string) (sendResults bool, err error) {
 	sendResults = true
 	logrus.WithFields(logrus.Fields{
 		"appID":   appID,
@@ -160,6 +127,6 @@ func UserSendMessageAll(appID, roomID, userID uint32, message string) (sendResul
 		"message": message,
 	}).Info("SendUserMessageAll")
 
-	ws.SendMsgAllServer(appID, roomID, userID, message)
+	messagecenter.SendMsgAllServer(appID, roomID, userID, message)
 	return
 }

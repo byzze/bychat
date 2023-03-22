@@ -1,13 +1,13 @@
 package main
 
 import (
+	"bychat/im"
+	"bychat/im/rpc/grpcserver"
+	"bychat/im/task"
 	"bychat/infra/configs"
 	"bychat/infra/log"
 	"bychat/infra/redislib"
-	"bychat/infra/rpc/grpcserver"
-	"bychat/infra/ws"
 	"bychat/internal/routers"
-	"bychat/internal/task"
 	"bytes"
 	"flag"
 	"io/ioutil"
@@ -31,14 +31,13 @@ func main() {
 	r.Use(LoggerToFile())
 	// 初始化路由
 	routers.InitWeb(r)
-	routers.InitWebsocket()
 
 	configs.InitConfig(cname)
 	log.SetOutPutFile(logrus.TraceLevel)
 
 	redislib.InitRedlisClient()
 
-	go ws.StartWebSocket()
+	go im.StartWebSocket()
 
 	task.ServerNodeInit()
 	task.CleanConnctionInit()

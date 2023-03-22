@@ -1,11 +1,8 @@
-package models
+package client
 
 import (
-	"bychat/pkg/common"
-	"encoding/json"
 	"fmt"
 	"runtime/debug"
-	"sync"
 
 	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
@@ -57,7 +54,7 @@ func (client *Client) GetKey() string {
 }
 
 // 读取客户端数据
-func (client *Client) Read() {
+func (client *Client) Read(process func(client *Client, message []byte)) {
 	defer func() {
 		if r := recover(); r != nil {
 			logrus.Error("write stop", string(debug.Stack()), r)
@@ -84,7 +81,7 @@ func (client *Client) Read() {
 
 		// 处理程序
 		logrus.Info("读取客户端数据 处理:", string(message))
-		client.ProcessData(message)
+		process(client, message)
 	}
 }
 
@@ -118,15 +115,15 @@ func (client *Client) Write() {
 	}
 }
 
-// SendMsg 发送数据
-func (client *Client) SendMsg(msg []byte) {
+// sendMsg 发送数据
+func (client *Client) sendMsg(msg []byte) {
 	if client == nil {
 		return
 	}
 
 	defer func() {
 		if r := recover(); r != nil {
-			logrus.Error("SendMsg stop:", r, string(debug.Stack()))
+			logrus.Error("sendMsg stop:", r, string(debug.Stack()))
 		}
 	}()
 
@@ -139,12 +136,9 @@ func (client *Client) close() {
 }
 
 // Login 用户登录
-func (client *Client) Login(appID uint32, userOnline *UserOnline) {
-	userOnline.Addr = client.Addr
-
-	client.LoginTime = userOnline.LoginTime
+func (client *Client) Login(appID, userID uint32) {
 	client.AppID = appID
-	client.UserID = userOnline.ID
+	client.UserID = userID
 	// 登录成功=心跳一次
 	client.Heartbeat(client.LoginTime)
 }
@@ -160,95 +154,4 @@ func (client *Client) IsHeartbeatTimeout(currentTime uint64) (timeout bool) {
 		timeout = true
 	}
 	return
-}
-
-// UserIsLocal 用户是否在本台机器上
-func (client *Client) UserIsLocal(localIP, localPort string) (result bool) {
-	if client.AccIP == localIP && client.AccPort == localPort {
-		result = true
-	}
-	return
-}
-
-// DisposeFunc 处理函数
-type DisposeFunc func(client *Client, seq string, message []byte) (code uint32, msg string, data interface{})
-
-var (
-	handlers        = make(map[MessageCmd]DisposeFunc)
-	handlersRWMutex sync.RWMutex
-)
-
-// Register 注册
-func Register(key MessageCmd, value DisposeFunc) {
-	handlersRWMutex.Lock()
-	defer handlersRWMutex.Unlock()
-	handlers[key] = value
-
-	return
-}
-
-func getHandlers(key MessageCmd) (value DisposeFunc, ok bool) {
-	handlersRWMutex.RLock()
-	defer handlersRWMutex.RUnlock()
-
-	value, ok = handlers[key]
-	return
-}
-
-// ProcessData websocket处理数据
-func (client *Client) ProcessData(message []byte) {
-	logrus.WithFields(logrus.Fields{
-		"addr": client.Addr,
-		"data": string(message),
-	}).Info("ProcessData Request")
-
-	var req = &Request{}
-	err := json.Unmarshal(message, req)
-	if err != nil {
-		logrus.Error(err)
-		return
-	}
-	requestData, err := json.Marshal(req.Data)
-	if err != nil {
-		logrus.Error("处理数据 json Marshal", err)
-		client.SendMsg([]byte("处理数据失败"))
-		return
-	}
-
-	seq := req.MsgSeq
-	cmd := MessageCmd(req.Cmd)
-
-	var (
-		code uint32
-		msg  string
-		data interface{}
-	)
-
-	if v, ok := getHandlers(cmd); ok {
-		code, msg, data = v(client, seq, requestData)
-	} else {
-		code = common.RoutingNotExist
-		logrus.WithFields(logrus.Fields{
-			"client.Addr": client.Addr,
-			"cmd":         cmd,
-		}).Error("处理数据 路由不存在")
-	}
-
-	msg = common.GetErrorMessage(code, msg)
-
-	responseHead := NewResponse(seq, code, msg, data, cmd)
-
-	headByte, err := json.Marshal(responseHead)
-	if err != nil {
-		logrus.Error("处理数据 json Marshal", err)
-		return
-	}
-
-	client.SendMsg(headByte)
-
-	logrus.WithFields(logrus.Fields{
-		"cmd":      cmd,
-		"code":     code,
-		"headByte": string(headByte),
-	}).Info("acc_response send")
 }
