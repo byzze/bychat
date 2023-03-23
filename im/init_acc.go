@@ -2,9 +2,10 @@ package im
 
 import (
 	"bychat/im/client"
-	messagecenter "bychat/im/message-center"
+	messagecenter "bychat/im/message_center"
 	"bychat/im/models"
 	"bychat/im/router"
+	"bychat/im/task"
 	"bychat/pkg/utils"
 	"net/http"
 	"time"
@@ -34,13 +35,15 @@ func StartWebSocket() {
 	rpcPort := viper.GetString("app.rpcPort")
 
 	serverPort = rpcPort
-	// 初始化路由
+	// 初始化路由``
 	router.InitWebsocket()
 
 	http.HandleFunc("/acc", wsPage)
 
 	models.NewServerNode(serverIP, serverPort)
 
+	task.ServerNodeInit()
+	task.CleanConnctionInit()
 	// 添加处理程序
 	go client.ManagerStart()
 	logrus.Infof("WebSocket 启动程序成功:%s:%s", serverIP, serverPort)

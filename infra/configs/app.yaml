@@ -1,6 +1,6 @@
 app:
-  httpPort: 7878
-  httpUrl: localhost:7878
+  httpPort: 8080
+  httpUrl: localhost:8080
   rpcPort: 9001
   webSocketPort: 8089
   webSocketUrl: localhost:8089

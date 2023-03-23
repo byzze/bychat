@@ -1,7 +1,6 @@
 package routers
 
 import (
-	"bychat/infra/redislib"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -20,7 +19,7 @@ func testInitRedis() {
 	if err != nil {
 		logrus.Panic(err)
 	}
-	redislib.InitRedlisClient()
+	// redislib.InitRedlisClient()
 }
 
 func TestRegisterRouter(t *testing.T) {

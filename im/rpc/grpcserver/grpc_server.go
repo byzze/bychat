@@ -1,7 +1,7 @@
 package grpcserver
 
 import (
-	messagecenter "bychat/im/message-center"
+	messagecenter "bychat/im/message_center"
 	"bychat/im/rpc/protobuf"
 	"bychat/pkg/common"
 	"context"

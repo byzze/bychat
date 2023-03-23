@@ -16,7 +16,7 @@ import (
 
 // CleanConnctionInit 清楚链接
 func CleanConnctionInit() {
-	Timer(3*time.Second, 10*time.Second, cleanConnection, "", nil, nil)
+	Timer(3*time.Second, 60*time.Second, cleanConnection, "", nil, nil)
 }
 
 // 清理超时连接

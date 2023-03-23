@@ -2,7 +2,7 @@ package user
 
 import (
 	"bychat/im/cache"
-	messagecenter "bychat/im/message-center"
+	messagecenter "bychat/im/message_center"
 	"bychat/im/models"
 	"time"
 

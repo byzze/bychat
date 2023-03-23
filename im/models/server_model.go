@@ -17,11 +17,10 @@ var ServerNodeInfo *ServerNode
 var once sync.Once
 
 // NewServerNode 新建
-func NewServerNode(ip string, port string) *ServerNode {
+func NewServerNode(ip string, port string) {
 	once.Do(func() {
 		ServerNodeInfo = &ServerNode{IP: ip, Port: port}
 	})
-	return ServerNodeInfo
 }
 
 // IsLocal 校验本地

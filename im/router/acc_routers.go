@@ -1,7 +1,7 @@
 package router
 
 import (
-	messagecenter "bychat/im/message-center"
+	messagecenter "bychat/im/message_center"
 	"bychat/im/models"
 )
 

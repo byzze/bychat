@@ -3,6 +3,7 @@ package task
 import (
 	"bychat/im/cache"
 	"bychat/im/models"
+	"log"
 	"runtime/debug"
 	"time"
 
@@ -20,9 +21,9 @@ func serverRegister(param interface{}) (result bool) {
 
 	defer func() {
 		if r := recover(); r != nil {
+			log.Println(string(debug.Stack()))
 			logrus.WithFields(logrus.Fields{
-				"r":           r,
-				"debug.Stack": string(debug.Stack()),
+				"r": r,
 			}).Info("服务注册 stop")
 		}
 	}()

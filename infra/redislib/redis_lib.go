@@ -1,10 +1,3 @@
-/**
-* Created by GoLand.
-* User: link1st
-* Date: 2019-07-25
-* Time: 14:18
- */
-
 package redislib
 
 import (
@@ -18,7 +11,7 @@ var (
 )
 
 // InitRedlisClient 初始链接
-func InitRedlisClient() {
+func init() {
 	// 初始redis链接
 	client = redis.NewClient(&redis.Options{
 		Addr:         viper.GetString("redis.addr"),
@@ -39,8 +32,4 @@ func InitRedlisClient() {
 // GetClient 获取redis client
 func GetClient() (c *redis.Client) {
 	return client
-}
-
-func CheckNilErr() {
-
 }
