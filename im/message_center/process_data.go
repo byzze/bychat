@@ -36,13 +36,13 @@ func getHandlers(key models.MessageCmd) (value DisposeFunc, ok bool) {
 }
 
 // ProcessData websocket处理数据
-func ProcessData(c *client.Client, message []byte) {
+func ProcessData(c *client.Client, data []byte) {
 	logrus.WithFields(logrus.Fields{
-		"data": string(message),
+		"data": string(data),
 	}).Info("ProcessData Request")
 
 	var req = &models.Request{}
-	err := json.Unmarshal(message, req)
+	err := json.Unmarshal(data, req)
 	if err != nil {
 		logrus.WithError(err).Error("ProcessData Unmarshal")
 		ReponseMsg(c, common.ParameterIllegal, "", "data format is invalid", "", "")
@@ -62,15 +62,15 @@ func ProcessData(c *client.Client, message []byte) {
 	var (
 		code    uint32
 		msg     string
-		content interface{}
+		message interface{}
 	)
 
 	if v, ok := getHandlers(msgCmd); ok {
-		code, msg, content = v(c, msgSeq, requestData)
+		code, msg, message = v(c, msgSeq, requestData)
 	} else {
-		ReponseMsg(c, common.RoutingNotExist, msgSeq, "router not found", content, msgCmd)
+		ReponseMsg(c, common.RoutingNotExist, msgSeq, "router not found", message, msgCmd)
 		return
 	}
 
-	ReponseMsg(c, code, msgSeq, msg, content, msgCmd)
+	ReponseMsg(c, code, msgSeq, msg, message, msgCmd)
 }

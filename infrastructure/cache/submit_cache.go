@@ -8,7 +8,7 @@
 package cache
 
 import (
-	"bychat/infra/redislib"
+	"bychat/infrastructure/redislib"
 	"fmt"
 
 	"github.com/sirupsen/logrus"

@@ -2,7 +2,7 @@ package fileserver
 
 import (
 	"bychat/api/base"
-	"bychat/im/models"
+	"bychat/domain/message"
 	"bychat/pkg/common"
 	"fmt"
 	"image"
@@ -33,9 +33,9 @@ func UploadFile(c *gin.Context) {
 	dstDir = fmt.Sprintf(dstDir, fileType)
 
 	var reqURL string
-	messageType := models.MessageType(fileType)
+	messageType := message.MsgType(fileType)
 	switch messageType {
-	case models.MessageTypeImage:
+	case message.MsgTypeImage:
 		config, _, err := image.DecodeConfig(file)
 		if err != nil {
 			logrus.WithError(err).Error("DecodeConfig Img")

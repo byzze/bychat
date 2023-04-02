@@ -19,6 +19,10 @@ func Login(c *client.Client, msgSeq string, message []byte) (code uint32, msg st
 
 // BindUser websocket处理数据
 func BindUser(c *client.Client, msgSeq string, message []byte) (code uint32, msg string, data interface{}) {
+	logrus.WithFields(logrus.Fields{
+		"msgSeq":  msgSeq,
+		"message": message,
+	}).Info("BindUser")
 	code = common.OK
 
 	var request = &models.OpenRequest{}
@@ -60,6 +64,11 @@ func MsgProcess(c *client.Client, msgSeq string, message []byte) (code uint32, m
 
 // Heartbeat 心跳
 func Heartbeat(c *client.Client, msgSeq string, message []byte) (code uint32, msg string, data interface{}) {
+	logrus.WithFields(logrus.Fields{
+		"msgSeq":  msgSeq,
+		"message": message,
+	}).Info("Heartbeat")
+
 	code = common.OK
 	currentTime := uint64(time.Now().Unix())
 

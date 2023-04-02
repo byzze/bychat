@@ -3,7 +3,7 @@ package cache
 import (
 	"bychat/im/models"
 	"bychat/im/server"
-	"bychat/infra/redislib"
+	"bychat/infrastructure/redislib"
 	"encoding/json"
 	"fmt"
 	"strconv"

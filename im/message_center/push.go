@@ -11,14 +11,14 @@ import (
 )
 
 // ReponseMsg 发送数据
-func ReponseMsg(c *client.Client, code uint32, msgSeq, msg string, content interface{}, msgType models.MessageCmd) {
-	responseHead := models.NewResponse(msgSeq, code, msg, content, msgType)
+func ReponseMsg(c *client.Client, code uint32, msgSeq, codeMsg string, message interface{}, msgCmd models.MessageCmd) {
+	responseHead := models.NewResponse(msgSeq, code, codeMsg, message, msgCmd)
 	headByte, err := json.Marshal(responseHead)
 	if err != nil {
 		logrus.Error("处理数据 json Marshal", err)
 		return
 	}
-	msg = common.GetErrorMessage(code, msg)
+	codeMsg = common.GetErrorMessage(code, codeMsg)
 	client.SendMsg(c, headByte)
 }
 
