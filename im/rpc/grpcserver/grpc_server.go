@@ -70,9 +70,9 @@ func (server *server) GetRoomUserList(c context.Context, req *protobuf.GetRoomUs
 	var userList []*protobuf.ResponUserOnline
 	for _, v := range userResList {
 		tmp := &protobuf.ResponUserOnline{
-			Id: v,
-			// NickName: v.NickName,
-			// Avatar:   v.Avatar,
+			Id:       v.ID,
+			NickName: v.NickName,
+			Avatar:   v.Avatar,
 		}
 		userList = append(userList, tmp)
 	}

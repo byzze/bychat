@@ -38,9 +38,9 @@ func SendMsgAllClient(appID, roomID, userID uint32, message string) {
 	}).Info("sendAll 发送消息")
 
 	roomUserList := cache.GetChatRoomUser(roomID)
-	for _, id := range roomUserList {
+	for _, v := range roomUserList {
 		c := getManager().getUserClient(appID, userID)
-		if c != nil && id != userID {
+		if c != nil && v.ID != userID {
 			c.sendMsg([]byte(message))
 		}
 	}

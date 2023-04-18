@@ -2,7 +2,6 @@ package cache
 
 import (
 	"bychat/im/models"
-	"bychat/infrastructure/redislib"
 	"encoding/json"
 	"fmt"
 
@@ -23,7 +22,6 @@ func getUserOnlineKey(userID uint32) (key string) {
 
 // GetUserOnlineInfo 用户在线信息
 func GetUserOnlineInfo(userID uint32) (userOnline *models.UserOnline, err error) {
-	redisClient := redislib.GetClient()
 
 	key := getUserOnlineKey(userID)
 	data, err := redisClient.Get(key).Bytes()
@@ -56,7 +54,6 @@ func GetUserOnlineInfo(userID uint32) (userOnline *models.UserOnline, err error)
 
 // SetUserOnlineInfo 设置用户在线数据
 func SetUserOnlineInfo(userKey uint32, userOnline *models.UserOnline) (err error) {
-	redisClient := redislib.GetClient()
 	key := getUserOnlineKey(userKey)
 
 	valueByte, err := json.Marshal(userOnline)

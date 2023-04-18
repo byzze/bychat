@@ -2,8 +2,8 @@ package user
 
 import (
 	"bychat/api/base"
+	"bychat/internal/usecase/user"
 	"bychat/pkg/common"
-	"bychat/usecase/user"
 	"fmt"
 	"time"
 

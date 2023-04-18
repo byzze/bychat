@@ -34,9 +34,9 @@ func GetRoomUserList(appID, roomID uint32) (userList []*models.ResponseUserOnlin
 		if server.IP == models.ServerNodeInfo.IP && server.Port == models.ServerNodeInfo.Port {
 			for _, v := range cache.GetChatRoomUser(roomID) {
 				tmp := &models.ResponseUserOnline{
-					ID: v,
-					// NickName: v.NickName,
-					// Avatar:   v.Avatar,
+					ID:       v.ID,
+					NickName: v.NickName,
+					Avatar:   v.Avatar,
 				}
 				userList = append(userList, tmp)
 			}

@@ -1,7 +1,7 @@
 package cache
 
 import (
-	"bychat/infrastructure/redislib"
+	"bychat/internal/redislib"
 	"fmt"
 	"time"
 

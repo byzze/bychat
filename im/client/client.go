@@ -18,6 +18,7 @@ const (
 type Client struct {
 	AppID   uint32 `json:"appID"`   // 登录的平台ID app/web/ios
 	UserID  uint32 `json:"userID"`  // userID
+	RoomID  uint32 `json:"roomID"`  // userID
 	AccIP   string `json:"accIp"`   // acc Ip
 	AccPort string `json:"accPort"` // acc 端口
 	// ClientIP      string          `json:"clientIp"`                // 客户端Ip

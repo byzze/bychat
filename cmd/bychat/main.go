@@ -3,9 +3,9 @@ package main
 import (
 	"bychat/im"
 	"bychat/im/rpc/grpcserver"
-	"bychat/infrastructure/configs"
-	"bychat/infrastructure/log"
-	"bychat/infrastructure/routers"
+	"bychat/internal/configs"
+	"bychat/internal/log"
+	"bychat/internal/routers"
 	"bytes"
 	"flag"
 	"io/ioutil"

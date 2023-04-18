@@ -3,7 +3,6 @@ package cache
 import (
 	"bychat/im/models"
 	"bychat/im/server"
-	"bychat/infrastructure/redislib"
 	"encoding/json"
 	"fmt"
 	"strconv"
@@ -17,8 +16,6 @@ const (
 	serverNodesHashCacheTime = 2 * 60 * 60             // key过期时间
 	serverNodesHashTimeout   = 3 * 60                  // 超时时间
 )
-
-var redisClient = redislib.GetClient()
 
 func getServerNodesHashKey() (key string) {
 	key = fmt.Sprintf("%s", serverNodesHashKey)
@@ -74,8 +71,6 @@ func DelServerNodeInfo(serverNode *models.ServerNode) (err error) {
 func GetServerNodeAll(currentTime uint64) (servers []*models.ServerNode, err error) {
 	servers = make([]*models.ServerNode, 0)
 	key := getServerNodesHashKey()
-
-	redisClient := redislib.GetClient()
 
 	val, err := redisClient.Do("hGetAll", key).Result()
 

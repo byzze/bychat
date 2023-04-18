@@ -719,16 +719,18 @@
                         start = res.data.start
                         limit = res.data.limit
                         //i表示在data中的索引位置，n表示包含的信息的对象
-                        $.each(res.data.data, function (i, n) {
-                            data_array = JSON.parse(n);
-                            data = data_array.data
-                            jsonval = JSON.stringify(data.msgBody)
-                            if (data.from === person.name) {
-                                addChatWith(myMsg(data.from, jsonval))
-                            } else {
-                                addChatWith(msg(data.from, jsonval))
-                            }
-                        });
+                        if (res.data.data) {
+                            $.each(res.data.data, function (i, n) {
+                                data_array = JSON.parse(n);
+                                data = data_array.data
+                                jsonval = JSON.stringify(data.msgBody)
+                                if (data.from === person.name) {
+                                    addChatWith(myMsg(data.from, jsonval))
+                                } else {
+                                    addChatWith(msg(data.from, jsonval))
+                                }
+                            });
+                        }
                         return false
                     }
                 });

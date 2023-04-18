@@ -28,7 +28,7 @@ func SendMsgAllClient(appID, roomID, userID uint32, message string) {
 }
 
 // GetChatRoomUser 获取房间用户
-func GetChatRoomUser(roomID uint32) []uint32 {
+func GetChatRoomUser(roomID uint32) []*models.UserOnline {
 	userResList := cache.GetChatRoomUser(roomID)
 	return userResList
 }

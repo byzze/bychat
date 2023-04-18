@@ -2,7 +2,7 @@ package fileserver
 
 import (
 	"bychat/api/base"
-	"bychat/domain/message"
+	"bychat/internal/domain/message"
 	"bychat/pkg/common"
 	"fmt"
 	"image"

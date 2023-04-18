@@ -1,9 +1,16 @@
 package cache
 
+import (
+	"bychat/im/models"
+
+	"github.com/sirupsen/logrus"
+)
+
+// TODO 后续修改为redis
 var roomCache = make(map[uint32][]uint32)
 
-// SetChatRoomUser 设置缓存
-func SetChatRoomUser(roomID, userID uint32) {
+// AddChatRoomUser 设置缓存
+func AddChatRoomUser(roomID, userID uint32) {
 	roomCache[roomID] = append(roomCache[roomID], userID)
 }
 
@@ -18,8 +25,20 @@ func DelChatRoomUser(roomID, userID uint32) {
 }
 
 // GetChatRoomUser 设置缓存
-func GetChatRoomUser(roomID uint32) []uint32 {
-	return roomCache[roomID]
+func GetChatRoomUser(roomID uint32) []*models.UserOnline {
+	var list = roomCache[roomID]
+	var res = make([]*models.UserOnline, 0)
+	for _, v := range list {
+		u, err := GetUserOnlineInfo(v)
+		if err != nil {
+			logrus.WithError(err).Error("GetUserOnlineInfo")
+			continue
+		}
+		if u != nil {
+			res = append(res, u)
+		}
+	}
+	return res
 }
 
 // GetChatRoomID 获取房间ID
