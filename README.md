@@ -1,5 +1,5 @@
 # bychat
-待开发完善.......
+基于websocket的聊天项目
 ## DO LIST
 - [ ] 单聊
 - [x] 群聊
